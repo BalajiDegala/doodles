@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: catalog-import
+  namespace: k8s-learning-basics
+  labels:
+    app.kubernetes.io/name: catalog-import
+    app.kubernetes.io/part-of: core-components-project
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: catalog-import
+        app.kubernetes.io/part-of: core-components-project
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: importer
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              echo "Starting one-time catalog import"
+              test -s /catalog/books.txt
+              echo "Imported $(wc -l < /catalog/books.txt) books:"
+              sed 's/^/- /' /catalog/books.txt
+              echo "Catalog import completed"
+          resources:
+            requests:
+              cpu: 5m
+              memory: 8Mi
+            limits:
+              cpu: 20m
+              memory: 16Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: catalog
+              mountPath: /catalog
+              readOnly: true
+      volumes:
+        - name: catalog
+          configMap:
+            name: hello-page
+            items:
+              - key: books.txt
+                path: books.txt

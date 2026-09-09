@@ -1,0 +1,12 @@
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: bookshop-fake
+  namespace: k8s-learning-platform
+spec:
+  provider:
+    fake:
+      data:
+        - key: /bookshop/practice
+          value: not-a-real-password
+          version: v1

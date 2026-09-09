@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: bookshop-availability
+  namespace: k8s-learning-operations
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: bookshop-ops

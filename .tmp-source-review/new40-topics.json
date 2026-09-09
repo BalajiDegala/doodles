@@ -1,0 +1,162 @@
+[
+  [
+    "41-monitoring",
+    "Kubernetes monitoring"
+  ],
+  [
+    "42-centralized-logging",
+    "Centralized logging"
+  ],
+  [
+    "43-release-strategies",
+    "Blue-green and canary releases"
+  ],
+  [
+    "44-quotas-and-limitranges",
+    "ResourceQuota and LimitRange"
+  ],
+  [
+    "45-networking-and-cni",
+    "Networking and CNI plugins"
+  ],
+  [
+    "46-headless-services",
+    "Headless Services"
+  ],
+  [
+    "47-ephemeral-debugging",
+    "Ephemeral containers and kubectl debug"
+  ],
+  [
+    "48-topology-spread",
+    "Topology spread constraints"
+  ],
+  [
+    "49-priority-and-preemption",
+    "Priority and preemption"
+  ],
+  [
+    "50-certificates-and-tls",
+    "cert-manager and TLS certificates"
+  ],
+  [
+    "51-gitops",
+    "GitOps with Argo CD and Flux"
+  ],
+  [
+    "52-external-secrets",
+    "External Secrets Operator"
+  ],
+  [
+    "53-image-pulls",
+    "Image pulls and registry authentication"
+  ],
+  [
+    "54-coredns",
+    "CoreDNS customization"
+  ],
+  [
+    "55-endpointslices",
+    "EndpointSlices and Endpoints"
+  ],
+  [
+    "56-etcd",
+    "etcd and cluster state"
+  ],
+  [
+    "57-api-admission",
+    "API request flow and admission"
+  ],
+  [
+    "58-crds-and-operators",
+    "CRDs and Operators"
+  ],
+  [
+    "59-scheduler-internals",
+    "Scheduler filtering and scoring"
+  ],
+  [
+    "60-container-runtimes",
+    "CRI, containerd, and CRI-O"
+  ],
+  [
+    "61-multiple-clusters",
+    "Multi-cluster strategies"
+  ],
+  [
+    "62-security-hardening",
+    "Security hardening and kube-bench"
+  ],
+  [
+    "63-mesh-traffic-and-identity",
+    "Mesh identity, traffic, and observability"
+  ],
+  [
+    "64-cluster-upgrades",
+    "Cluster upgrade planning"
+  ],
+  [
+    "65-disaster-recovery",
+    "Disaster recovery"
+  ],
+  [
+    "66-cost-and-rightsizing",
+    "Cost allocation and right-sizing"
+  ],
+  [
+    "67-gateway-api",
+    "Gateway API and Ingress"
+  ],
+  [
+    "68-large-clusters",
+    "Kubernetes at scale"
+  ],
+  [
+    "69-policy-and-supply-chain",
+    "Kyverno, Gatekeeper, and supply-chain policy"
+  ],
+  [
+    "70-node-autoscalers",
+    "Karpenter and Cluster Autoscaler"
+  ],
+  [
+    "71-managed-kubernetes",
+    "EKS, GKE, and AKS"
+  ],
+  [
+    "72-api-deprecations",
+    "API deprecations"
+  ],
+  [
+    "73-native-sidecars",
+    "Native sidecar containers"
+  ],
+  [
+    "74-coordinated-autoscaling",
+    "HPA, VPA, and KEDA"
+  ],
+  [
+    "75-zero-trust",
+    "Zero-trust networking"
+  ],
+  [
+    "76-audit-logging",
+    "Kubernetes audit logging"
+  ],
+  [
+    "77-secret-encryption",
+    "Secret encryption at rest"
+  ],
+  [
+    "78-runtime-classes",
+    "RuntimeClass and sandboxing"
+  ],
+  [
+    "79-progressive-delivery",
+    "Argo Rollouts and Flagger"
+  ],
+  [
+    "80-garbage-collection",
+    "Garbage collection and ownership"
+  ]
+]

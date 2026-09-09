@@ -1,0 +1,6 @@
+apiVersion: v2
+name: bookshop-desk
+description: A small Bookshop release for the operations learning chapter
+type: application
+version: 0.1.0
+appVersion: "1.0"

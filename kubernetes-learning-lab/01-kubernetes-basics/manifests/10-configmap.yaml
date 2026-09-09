@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-page
+  namespace: k8s-learning-basics
+data:
+  APP_ENVIRONMENT: learning
+  STORE_NAME: Tiny Bookshop
+  index.html: |
+    <!doctype html>
+    <html lang="en">
+      <head><meta charset="utf-8"><title>{{STORE_NAME}}</title></head>
+      <body style="font-family:sans-serif;max-width:45rem;margin:3rem auto">
+        <h1>{{STORE_NAME}}</h1>
+        <p>Release {{RELEASE}}</p>
+        <p>This page is served by replaceable Pods behind one stable Service.</p>
+        <h2>Starter catalog</h2>
+        <ul>
+          <li>Kubernetes Up and Running</li>
+          <li>Site Reliability Engineering</li>
+          <li>The Phoenix Project</li>
+        </ul>
+      </body>
+    </html>
+  healthz: |
+    healthy
+  ready.html: |
+    ready
+  books.txt: |
+    Kubernetes Up and Running
+    Site Reliability Engineering
+    The Phoenix Project

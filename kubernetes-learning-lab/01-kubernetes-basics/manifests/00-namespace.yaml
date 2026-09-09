@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: k8s-learning-basics
+  labels:
+    learning.ops2book/topic: kubernetes-basics
+  annotations:
+    learning.ops2book/purpose: Core components practice project

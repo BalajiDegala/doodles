@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: storefront
+  namespace: k8s-learning-blue-green
+spec:
+  type: ClusterIP
+  selector:
+    app: storefront
+    version: blue
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

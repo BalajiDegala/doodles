@@ -1,0 +1,17 @@
+﻿[
+    {
+        "name":  "46 absolute headless DNS and HTTP",
+        "status":  "passed",
+        "evidence":  "service/catalog-peers created\nServer:\t\t10.43.0.10\nAddress:\t10.43.0.10:53\n\n\nName:\tcatalog-peers.k8s-learning-platform.svc.cluster.local\nAddress: 10.42.0.163\nName:\tcatalog-peers.k8s-learning-platform.svc.cluster.local\nAddress: 10.42.0.164\n\n\u003ch1\u003eTiny Bookshop platform desk\u003c/h1\u003e"
+    },
+    {
+        "name":  "47 ephemeral inspector process and resolver output",
+        "status":  "passed",
+        "evidence":  "pod/debug-counter created\npod/debug-counter condition met\nTargeting container \"counter\". If you don\u0027t see processes from this container it may be because the container runtime doesn\u0027t support this feature.\nPID   USER     TIME  COMMAND\n    1 1000      0:00 sleep 3600\n    7 1000      0:00 sh -c ps; cat /etc/resolv.conf\n   13 1000      0:00 ps\nnameserver 10.43.0.10\nsearch k8s-learning-platform.svc.cluster.local svc.cluster.local cluster.local\noptions ndots:5"
+    },
+    {
+        "name":  "Cleanup retry namespace",
+        "status":  "passed",
+        "evidence":  "namespace \"k8s-learning-platform\" deleted"
+    }
+]

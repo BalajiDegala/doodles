@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: reading-list
+  namespace: k8s-learning-basics
+  labels:
+    app.kubernetes.io/name: reading-list
+    app.kubernetes.io/part-of: core-components-project
+spec:
+  serviceName: reading-list
+  replicas: 2
+  selector:
+    matchLabels:
+      app: reading-list
+  template:
+    metadata:
+      labels:
+        app: reading-list
+        app.kubernetes.io/name: reading-list
+        app.kubernetes.io/part-of: core-components-project
+    spec:
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: store
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              if [ ! -f /data/identity.txt ]; then
+                echo "Volume first initialized by ${POD_NAME}" > /data/identity.txt
+              fi
+              exec httpd -f -p 8080 -h /data
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /identity.txt
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 25m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app.kubernetes.io/part-of: core-components-project
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 64Mi

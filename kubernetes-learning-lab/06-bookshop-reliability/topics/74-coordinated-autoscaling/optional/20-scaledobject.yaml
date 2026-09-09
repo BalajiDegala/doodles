@@ -1,0 +1,19 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: bookshop-hours
+  namespace: k8s-learning-reliability
+spec:
+  scaleTargetRef:
+    name: event-counter
+  pollingInterval: 15
+  cooldownPeriod: 30
+  minReplicaCount: 0
+  maxReplicaCount: 2
+  triggers:
+    - type: cron
+      metadata:
+        timezone: Asia/Kolkata
+        start: 0 9 * * *
+        end: 0 17 * * *
+        desiredReplicas: '2'

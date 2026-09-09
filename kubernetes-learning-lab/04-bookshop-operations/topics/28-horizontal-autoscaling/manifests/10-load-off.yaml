@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scale-load
+  namespace: k8s-learning-operations
+data:
+  enabled: 'false'

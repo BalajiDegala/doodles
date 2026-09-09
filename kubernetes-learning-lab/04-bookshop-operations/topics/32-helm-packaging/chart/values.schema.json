@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["replicaCount", "image", "page"],
+  "properties": {
+    "replicaCount": {"type": "integer", "minimum": 1, "maximum": 3},
+    "image": {"type": "string", "minLength": 1},
+    "page": {"type": "string", "minLength": 1}
+  }
+}

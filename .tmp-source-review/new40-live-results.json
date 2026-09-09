@@ -1,0 +1,112 @@
+﻿[
+    {
+        "name":  "Both base Deployments and HTTP pages",
+        "status":  "passed",
+        "evidence":  "Waiting for deployment \"platform-catalog\" rollout to finish: 0 of 2 updated replicas are available...\nWaiting for deployment \"platform-catalog\" rollout to finish: 1 of 2 updated replicas are available...\ndeployment \"platform-catalog\" successfully rolled out\ndeployment \"reliable-catalog\" successfully rolled out\n\u003ch1\u003eTiny Bookshop platform desk\u003c/h1\u003e\n\u003ch1\u003eTiny Bookshop reliability desk\u003c/h1\u003e"
+    },
+    {
+        "name":  "41 metrics endpoint",
+        "status":  "passed",
+        "evidence":  "# HELP bookshop_catalog_titles Number of titles in the teaching catalog.\n# TYPE bookshop_catalog_titles gauge\nbookshop_catalog_titles 60"
+    },
+    {
+        "name":  "42 structured log Job",
+        "status":  "passed",
+        "evidence":  "job.batch/catalog-log-demo created\njob.batch/catalog-log-demo condition met\n{\"level\":\"warn\",\"event\":\"supplier_delayed\",\"request_id\":\"lesson-42\"}\n{\"level\":\"info\",\"event\":\"catalog_started\",\"request_id\":\"lesson-42\"}\n{\"level\":\"info\",\"event\":\"catalog_complete\",\"request_id\":\"lesson-42\"}"
+    },
+    {
+        "name":  "44 LimitRange defaults and quota rejections",
+        "status":  "passed",
+        "evidence":  "Warning: resource namespaces/k8s-learning-budgets is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.\nnamespace/k8s-learning-budgets configured\nlimitrange/counter-defaults created\nresourcequota/counter-budget created\npod/budget-one created\nError from server (Forbidden): error when creating \"F:/ops2book/kubernetes-learning-lab/05-bookshop-platform/topics/44-quotas-and-limitranges/negative/too-large.yaml\": pods \"budget-too-large\" is forbidden: maximum cpu usage per Container is 200m, but limit is 300m\npod/budget-two created\nError from server (Forbidden): error when creating \"F:/ops2book/kubernetes-learning-lab/05-bookshop-platform/topics/44-quotas-and-limitranges/negative/budget-extra.yaml\": pods \"budget-extra\" is forbidden: exceeded quota: counter-budget, requested: pods=1, used: pods=2, limited: pods=2"
+    },
+    {
+        "name":  "46 headless DNS and Pod listener",
+        "status":  "failed",
+        "evidence":  "Server:\t\t10.43.0.10\nAddress:\t10.43.0.10:53\n\n** server can\u0027t find catalog-peers.cluster.local: NXDOMAIN\n\n** server can\u0027t find catalog-peers.svc.cluster.local: NXDOMAIN\n\n** server can\u0027t find catalog-peers.cluster.local: NXDOMAIN\n\n** server can\u0027t find catalog-peers.svc.cluster.local: NXDOMAIN\n\n\nName:\tcatalog-peers.k8s-learning-platform.svc.cluster.local\nAddress: 10.42.0.144\nName:\tcatalog-peers.k8s-learning-platform.svc.cluster.local\nAddress: 10.42.0.145\n\ncommand terminated with exit code 1"
+    },
+    {
+        "name":  "47 restricted ephemeral inspection",
+        "status":  "failed",
+        "evidence":  "Cannot index into a null array."
+    },
+    {
+        "name":  "48 preferred topology spreading",
+        "status":  "passed",
+        "evidence":  "deployment.apps/topology-counters created\nWaiting for deployment \"topology-counters\" rollout to finish: 0 of 3 updated replicas are available...\nWaiting for deployment \"topology-counters\" rollout to finish: 1 of 3 updated replicas are available...\nWaiting for deployment \"topology-counters\" rollout to finish: 2 of 3 updated replicas are available...\ndeployment \"topology-counters\" successfully rolled out\nNAME                                 READY   STATUS    RESTARTS   AGE   IP            NODE              NOMINATED NODE   READINESS GATES\ntopology-counters-5cb4694cf6-6rl64   1/1     Running   0          6s    10.42.0.153   desktop-s1npbba   \u003cnone\u003e           \u003cnone\u003e\ntopology-counters-5cb4694cf6-9b7bk   1/1     Running   0          6s    10.42.0.152   desktop-s1npbba   \u003cnone\u003e           \u003cnone\u003e\ntopology-counters-5cb4694cf6-qg46v   1/1     Running   0          6s    10.42.0.154   desktop-s1npbba   \u003cnone\u003e           \u003cnone\u003e\ndeployment.apps \"topology-counters\" deleted from k8s-learning-platform namespace"
+    },
+    {
+        "name":  "50 optional cert-manager issuance",
+        "status":  "passed",
+        "evidence":  "issuer.cert-manager.io/bookshop-selfsigned created (server dry run)\ncertificate.cert-manager.io/catalog-lab created (server dry run)\nissuer.cert-manager.io/bookshop-selfsigned created\ncertificate.cert-manager.io/catalog-lab created\ncertificate.cert-manager.io/catalog-lab condition met\nCertificate ready; TLS Secret exists; private material not logged."
+    },
+    {
+        "name":  "53 image pull policies",
+        "status":  "passed",
+        "evidence":  "pod/pull-cached created\npod/pull-resolve created\npod/pull-cached condition met\npod/pull-resolve condition met\nNAME           IMAGEID\npull-cached    docker-pullable://busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662\npull-resolve   docker-pullable://busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"
+    },
+    {
+        "name":  "55 ready EndpointSlice backends",
+        "status":  "passed",
+        "evidence":  "Two ready endpoints matched the base replica count."
+    },
+    {
+        "name":  "57 dry-run does not create a Pod",
+        "status":  "passed",
+        "evidence":  "pod/admission-preview created (server dry run)"
+    },
+    {
+        "name":  "59 absent custom scheduler leaves Pod unassigned",
+        "status":  "passed",
+        "evidence":  "pod/scheduler-waiting created\npod \"scheduler-waiting\" deleted from k8s-learning-platform namespace"
+    },
+    {
+        "name":  "65 authored configuration recovery in separate namespace",
+        "status":  "passed",
+        "evidence":  "Warning: resource namespaces/k8s-learning-recovery is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.\nnamespace/k8s-learning-recovery configured\nconfigmap/reliable-catalog-page created\nservice/reliable-catalog created\ndeployment.apps/reliable-catalog created\nWaiting for deployment \"reliable-catalog\" rollout to finish: 0 of 2 updated replicas are available...\nWaiting for deployment \"reliable-catalog\" rollout to finish: 1 of 2 updated replicas are available...\ndeployment \"reliable-catalog\" successfully rolled out\n\u003ch1\u003eTiny Bookshop reliability desk\u003c/h1\u003e"
+    },
+    {
+        "name":  "67 HTTPRoute server schema dry-run only",
+        "status":  "passed",
+        "evidence":  "httproute.gateway.networking.k8s.io/bookshop-route created (server dry run)"
+    },
+    {
+        "name":  "73 native sidecar permits Job completion",
+        "status":  "passed",
+        "evidence":  "job.batch/native-report created\njob.batch/native-report condition met\nBookshop report finished\nHelper heartbeat\nHelper heartbeat\nHelper heartbeat\nHelper heartbeat\nHelper heartbeat\nHelper heartbeat\nHelper heartbeat\nHelper heartbeat\nHelper heartbeat\nHelper heartbeat"
+    },
+    {
+        "name":  "75 selected ingress allow deny and restoration",
+        "status":  "passed",
+        "evidence":  "pod/trusted-visitor created\npod/unknown-visitor created\npod/trusted-visitor condition met\npod/unknown-visitor condition met\nnetworkpolicy.networking.k8s.io/catalog-identity-boundary created\n\u003ch1\u003eTiny Bookshop reliability desk\u003c/h1\u003e\nUnapproved visitor failed after policy; approved visitor fetched page.\nRestoration succeeded."
+    },
+    {
+        "name":  "77 dummy Secret round trip",
+        "status":  "passed",
+        "evidence":  "secret/encryption-practice created\nPublic dummy value matched; encryption at rest not inferred."
+    },
+    {
+        "name":  "80 orphan and foreground garbage collection",
+        "status":  "passed",
+        "evidence":  "deployment.apps/disposable-counter created\nWaiting for deployment \"disposable-counter\" rollout to finish: 0 of 1 updated replicas are available...\ndeployment \"disposable-counter\" successfully rolled out\ndeployment.apps \"disposable-counter\" deleted from k8s-learning-reliability namespace\nreplicaset.apps \"disposable-counter-67c5f7445\" deleted from k8s-learning-reliability namespace\nReplicaSet survived owner orphaning; foreground removal cleaned its Pods."
+    },
+    {
+        "name":  "Cleanup k8s-learning-platform",
+        "status":  "passed",
+        "evidence":  "namespace \"k8s-learning-platform\" deleted"
+    },
+    {
+        "name":  "Cleanup k8s-learning-reliability",
+        "status":  "passed",
+        "evidence":  "namespace \"k8s-learning-reliability\" deleted"
+    },
+    {
+        "name":  "Cleanup k8s-learning-budgets",
+        "status":  "passed",
+        "evidence":  "namespace \"k8s-learning-budgets\" deleted"
+    },
+    {
+        "name":  "Cleanup k8s-learning-recovery",
+        "status":  "passed",
+        "evidence":  "namespace \"k8s-learning-recovery\" deleted"
+    }
+]

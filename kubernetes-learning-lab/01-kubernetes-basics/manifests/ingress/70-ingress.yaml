@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bookshop
+  namespace: k8s-learning-basics
+  annotations:
+    learning.ops2book/purpose: Optional external HTTP route for the bookshop
+spec:
+  rules:
+    - host: bookshop.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hello-web
+                port:
+                  name: http

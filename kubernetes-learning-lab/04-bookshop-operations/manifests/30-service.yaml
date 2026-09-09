@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookshop-ops
+  namespace: k8s-learning-operations
+spec:
+  selector:
+    app: bookshop-ops
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

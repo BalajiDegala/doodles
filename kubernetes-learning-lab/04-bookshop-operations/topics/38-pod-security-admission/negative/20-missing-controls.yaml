@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: admission-missing-controls
+  namespace: k8s-learning-admission
+  labels: {}
+spec:
+  automountServiceAccountToken: false
+  nodeSelector:
+    kubernetes.io/os: linux
+  terminationGracePeriodSeconds: 15
+  containers:
+    - name: worker
+      image: busybox:1.36
+      command:
+        - /bin/sh
+        - -c
+      args:
+        - exec sleep 3600
+      resources:
+        requests:
+          cpu: 5m
+          memory: 8Mi
+        limits:
+          cpu: 50m
+          memory: 32Mi

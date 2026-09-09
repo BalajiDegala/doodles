@@ -1,0 +1,14 @@
+{
+  "counts": {
+    "markdownFiles": 246,
+    "localLinks": 853,
+    "yamlFiles": 113,
+    "resourceDocuments": 106,
+    "renderedDocuments": 18,
+    "numberedTopics": 80,
+    "topicsWithIndividualRunbooks": 60
+  },
+  "failures": [
+    "14-init-containers: needs four concise technical points"
+  ]
+}

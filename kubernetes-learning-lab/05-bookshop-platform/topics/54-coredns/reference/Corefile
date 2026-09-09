@@ -1,0 +1,11 @@
+.:1053 {
+    errors
+    health :18080
+    ready :18181
+    hosts {
+        192.0.2.10 supplier.bookshop.test
+        fallthrough
+    }
+    forward . 192.0.2.53
+    cache 30
+}

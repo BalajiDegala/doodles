@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: retry-onfailure
+  namespace: k8s-learning-operations
+  labels:
+    exercise: restart
+spec:
+  restartPolicy: OnFailure
+  automountServiceAccountToken: false
+  nodeSelector:
+    kubernetes.io/os: linux
+  terminationGracePeriodSeconds: 15
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: worker
+      image: busybox:1.36
+      command: ["/bin/sh", "-c"]
+      args:
+        - "if test -f /state/attempted; then echo 'Retry completed'; exit 0; fi; touch /state/attempted; echo 'First attempt failed'; exit 1"
+      resources:
+        requests: {cpu: 5m, memory: 8Mi}
+        limits: {cpu: 50m, memory: 32Mi}
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+      volumeMounts:
+        - name: state
+          mountPath: /state
+  volumes:
+    - name: state
+      emptyDir: {}

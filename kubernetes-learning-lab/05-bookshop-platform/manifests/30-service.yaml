@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: platform-catalog
+  namespace: k8s-learning-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: platform-catalog
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
