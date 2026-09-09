@@ -1,4 +1,4 @@
-# GitOps with Argo CD and Flux
+# 51. GitOps with Argo CD and Flux
 
 ## Concise technical summary
 

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: q101-held
+  namespace: k8s-learning-finalizer
+  finalizers:
+    - learning.bookshop/hold-q101
+data:
+  purpose: dummy hold with no external resource

@@ -1,4 +1,4 @@
-# Argo Rollouts and Flagger: runbook
+# 79. Argo Rollouts and Flagger: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

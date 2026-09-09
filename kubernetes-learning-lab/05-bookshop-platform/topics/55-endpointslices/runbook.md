@@ -1,4 +1,4 @@
-# EndpointSlices and Endpoints: runbook
+# 55. EndpointSlices and Endpoints: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

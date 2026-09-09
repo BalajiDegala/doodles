@@ -1,4 +1,4 @@
-# Kubernetes monitoring: reading the manifests
+# 41. Kubernetes monitoring: reading the manifests
 
 Files: [page and metric](../../manifests/10-page.yaml), [Deployment](../../manifests/20-deployment.yaml), and [scrape reference](reference/prometheus-scrape.yaml).
 

@@ -1,4 +1,4 @@
-# Security hardening and kube-bench: reading the manifests
+# 62. Security hardening and kube-bench: reading the manifests
 
 Read the [Deployment](../../manifests/20-deployment.yaml). `automountServiceAccountToken: false` avoids an unnecessary API token. Pod UID/GID, seccomp, and container capability/escalation/filesystem settings reduce privileges. `team` and `purpose` labels support ownership but do not enforce authorization.
 

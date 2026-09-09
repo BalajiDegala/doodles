@@ -1,4 +1,4 @@
-# Zero-trust networking: reading the manifests
+# 75. Zero-trust networking: reading the manifests
 
 Files: [visitors](manifests/10-visitors.yaml) and [catalog policy](policy/20-catalog-ingress.yaml).
 

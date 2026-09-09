@@ -1,4 +1,4 @@
-# EKS, GKE, and AKS: reading the manifests
+# 71. EKS, GKE, and AKS: reading the manifests
 
 The [Deployment](../../manifests/20-deployment.yaml) and [Service](../../manifests/30-service.yaml) use portable API shapes, but portability also depends on supported versions, Linux image execution, admission rules, and network access.
 

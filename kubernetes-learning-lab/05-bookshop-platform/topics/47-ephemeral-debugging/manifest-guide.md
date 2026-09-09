@@ -1,4 +1,4 @@
-# Ephemeral containers and kubectl debug: reading the manifests
+# 47. Ephemeral containers and kubectl debug: reading the manifests
 
 File: [debug target](manifests/10-debug-target.yaml). It creates Pod `debug-counter` with container `counter`, a non-root BusyBox process, and no API token.
 

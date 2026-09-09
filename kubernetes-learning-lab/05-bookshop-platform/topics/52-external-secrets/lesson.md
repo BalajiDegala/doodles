@@ -1,4 +1,4 @@
-# External Secrets Operator
+# 52. External Secrets Operator
 
 ## Concise technical summary
 

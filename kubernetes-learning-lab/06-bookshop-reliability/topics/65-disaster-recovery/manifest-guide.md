@@ -1,4 +1,4 @@
-# Disaster recovery: reading the manifests
+# 65. Disaster recovery: reading the manifests
 
 Files: [restore base](restore/base/kustomization.yaml), [page](restore/base/10-page.yaml), [Deployment](restore/base/20-deployment.yaml), [Service](restore/base/30-service.yaml), [practice overlay](restore/practice/kustomization.yaml), and [recovery namespace](restore/practice/namespace.yaml).
 

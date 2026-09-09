@@ -1,4 +1,4 @@
-# Mesh identity, traffic, and observability
+# 63. Mesh identity, traffic, and observability
 
 ## Concise technical summary
 

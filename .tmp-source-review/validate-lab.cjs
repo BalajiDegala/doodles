@@ -6,7 +6,9 @@ const root = path.resolve(__dirname, '../kubernetes-learning-lab');
 const operations = path.join(root, '04-bookshop-operations');
 const platform = path.join(root, '05-bookshop-platform');
 const reliability = path.join(root, '06-bookshop-reliability');
-const practiceChapters = [operations, platform, reliability];
+const incidents = path.join(root, '07-production-incidents');
+const governance = path.join(root, '08-production-governance');
+const practiceChapters = [operations, platform, reliability, incidents, governance];
 const failures = [];
 const counts = {markdownFiles:0,localLinks:0,yamlFiles:0,resourceDocuments:0,renderedDocuments:0,numberedTopics:0,topicsWithIndividualRunbooks:0};
 function files(dir) {return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(path.join(dir,e.name)):[path.join(dir,e.name)]);}
@@ -85,7 +87,9 @@ for(const {file,d} of resources) {
   }
   if(d.kind==='Service') {
     const targets=templates.filter(({d:t})=>t.metadata.namespace===d.metadata.namespace && matches(d.spec.selector,t.kind==='Pod'?t.metadata.labels:t.spec?.template?.metadata.labels));
-    if(!targets.length)fail(file,'Service selects no authored workload');
+    const deliberateEmpty=label(file)==='07-production-incidents/topics/86-service-routing/faults/10-service.yaml';
+    if(deliberateEmpty){expect(d.metadata.name==='q86-route'&&d.spec.selector.app==='q86-missing'&&targets.length===0,'Q86 fault must remain an intentionally empty selector');}
+    else if(!targets.length)fail(file,'Service selects no authored workload');
     for(const port of d.spec.ports||[])if(typeof port.targetPort==='string'&&!targets.some(({d:t})=>podSpec(t).containers.some(c=>c.ports?.some(p=>p.name===port.targetPort))))fail(file,'unresolved Service targetPort '+port.targetPort);
   }
   const spec=podSpec(d);if(!spec)continue;
@@ -114,16 +118,38 @@ for(const {file,d} of resources) {
 const topicNumbers=[];
 for(const chapter of [path.join(root,'01-kubernetes-basics'),...practiceChapters]) {
  for(const dir of fs.readdirSync(path.join(chapter,'topics'))) {
-  counts.numberedTopics++;topicNumbers.push(Number(dir.slice(0,2)));
+  counts.numberedTopics++;topicNumbers.push(Number((dir.match(/^\d+/)||['0'])[0]));
   const required=['lesson.md','manifest-guide.md'];
   if(practiceChapters.includes(chapter)){required.push('runbook.md');counts.topicsWithIndividualRunbooks++;}
   for(const f of required)if(!fs.existsSync(path.join(chapter,'topics',dir,f)))failures.push(dir+': missing '+f);
   const lesson=fs.readFileSync(path.join(chapter,'topics',dir,'lesson.md'),'utf8');
-  expect((lesson.match(/^[1-4]\. /gm)||[]).length===4,dir+': needs four concise technical points');
+  const summary=(lesson.split(/## Plain meaning/i)[0].match(/^[1-4]\. /gm)||[]).length;
+  expect(summary===4,dir+': needs four concise technical points');
   expect(lesson.includes('Memory cue:'),dir+': needs memory cue');
  }
 }
-expect(JSON.stringify(topicNumbers.sort((a,b)=>a-b))===JSON.stringify(Array.from({length:80},(_,i)=>i+1)),'Expected each topic 1-80 exactly once');
+expect(JSON.stringify(topicNumbers.sort((a,b)=>a-b))===JSON.stringify(Array.from({length:110},(_,i)=>i+1)),'Expected each topic 1-110 exactly once');
+const sourceMap=JSON.parse(fs.readFileSync(path.join(root,'quality/source-map-81-110.json'),'utf8'));
+expect(sourceMap.length===30,'Source map must contain thirty reviewed PDF questions');
+const observedBodies=new Map();
+for(const item of sourceMap){
+ const folder=path.join(root,item.chapter,'topics',item.folder);
+ for(const name of ['lesson.md','manifest-guide.md','runbook.md']){
+  const body=fs.readFileSync(path.join(folder,name),'utf8');
+  expect(body.startsWith('# '+item.number+'. '),item.folder+': missing numbered '+name+' heading');
+  const identity=body.replace(/^#.*\n/,'').replace(/Source:.*\n/,'').replaceAll(item.title,'TOPIC');
+  const key=name+':'+identity;
+  expect(!observedBodies.has(key),item.folder+': duplicate generic '+name+' with '+observedBodies.get(key));
+  observedBodies.set(key,item.folder);
+ }
+ const lesson=fs.readFileSync(path.join(folder,'lesson.md'),'utf8');
+ expect(lesson.startsWith('# '+item.number+'. '+item.title+'\n'),item.folder+': heading/source-map mismatch');
+ expect(lesson.includes('question '+item.number+', pages '+item.sourcePages),item.folder+': missing PDF page mapping');
+}
+for(const file of all.filter(f=>f.endsWith('.md')&&(/[/\\](0[4-8])-/.test(f)))){
+ const body=fs.readFileSync(file,'utf8');
+ expect(!/[\uFFFD]|\u00e2\u20ac|\u00c2\u00a7/.test(body),label(file)+': damaged text encoding');
+}
 console.log(JSON.stringify({counts,failures},null,2));
 fs.writeFileSync(path.join(__dirname,'validation-result.json'),JSON.stringify({counts,failures},null,2)+'\n');
 process.exitCode=failures.length?1:0;

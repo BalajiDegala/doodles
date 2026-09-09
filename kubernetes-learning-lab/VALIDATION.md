@@ -1,16 +1,16 @@
 # Validation checkpoint
 
-Date: 2026-09-09. Content checkpoint: source topics 1-40, plus blue-green and canary examples.
+Date: 2026-09-09. Content: 110 numbered source topics and two additional release-strategy labs. The [quality review](QUALITY-REVIEW-40-110.md) covers questions 40-80 and the complete rewrite of 81-110.
 
-## Local validation
+## Local checks
 
-Result: passed. The final audit covered 118 Markdown files, 440 local links/anchors, 70 non-template YAML files containing 66 resource documents, and 14 rendered Helm/Kustomize documents. All 66 PowerShell command blocks in the operations chapter also parsed without syntax errors. Shell parsing does not execute the commands or verify their runtime outcomes.
+Passed: 345 Markdown files and their local links/anchors; 156 non-template YAML files containing 150 Kubernetes resource documents; and 18 rendered Helm/Kustomize documents. All 208 PowerShell command blocks parsed without syntax errors. Parsing does not execute commands or establish their runtime results.
 
-The workspace audit checks Markdown file links and heading anchors, parses ordinary YAML, checks Deployment selectors and Service target ports, resolves authored configuration/storage/account references, and verifies the operations workloads' declared security controls. StatefulSet claim templates are included when resolving mounted volumes. The deliberately incomplete admission input is excluded only from the ordinary security-control check.
+The audit verifies Deployment selectors, Service ports and targets, authored configuration/storage/account references, declared workload security controls, and StatefulSet claim-template references. Deliberately invalid teaching inputs have narrowly scoped exceptions: the Q86 fault Service must select no workload, and the incomplete admission input is not expected to satisfy the normal security-control check.
 
-The audit also checks that all twenty operations topics contain a lesson, manifest guide, runbook, four concise technical points, and a memory cue. These checks establish local consistency; they are not full Kubernetes API schema or admission validation.
+There is exactly one topic for each number 1-110. Topics 21-110 have individual runbooks; topics 1-20 use the foundations chapter runbook. Each rewritten topic has a numbered lesson, walkthrough, runbook, four-point summary, memory cue, and explicit practice mode. The [source map](quality/source-map-81-110.json) records PDF pages 38-54. Additional checks detect duplicate topic documents, incorrect source headings, and damaged UTF-8 text. These establish consistency alongside editorial review; they are not complete API-schema or production validation.
 
-Helm 4.0.5 and kubectl 1.34.1 with Kustomize 5.7.1 were available locally. From `04-bookshop-operations`, the rendering checks are:
+Helm 4.0.5 and kubectl 1.34.1 with Kustomize 5.7.1 were used. From `04-bookshop-operations`:
 
 ~~~powershell
 helm lint topics/32-helm-packaging/chart --strict
@@ -21,26 +21,35 @@ kubectl kustomize topics/35-kustomize-and-helm/base
 kubectl kustomize topics/35-kustomize-and-helm/overlays/practice
 ~~~
 
-Both Helm values sets pass strict lint and render four documents each, including the test hook. Both Kustomize configurations render three resources. The audit verifies morning/base replica count 1, evening/practice count 2, the changed Helm page checksum, the patched Kustomize page, and identical Kustomize resource identities for restoration.
+Both chart values sets passed strict lint and rendered four documents each, including the test hook. The base/practice Kustomize configurations rendered three resources each; the Q66 recovery configuration rendered four. Replica counts, the changed Helm page checksum, patched Kustomize page, and restoration identities were checked. Helm 3 was not executed.
 
-Helm 3 compatibility uses common chart/CLI features but has not been executed with a Helm 3 binary. Test Pods are retained until the next test or explicit cleanup so their logs remain inspectable.
+## Current live checks
 
-## Live validation still required
+The `rancher-desktop` cluster reported `v1.33.5+k3s1`. All 19 incident/governance checks passed, followed by both remaining namespace cleanup checks. The [runtime results](quality/runtime-81-110.json) record each outcome.
 
-The selected `rancher-desktop` context points to `https://127.0.0.1:6443`. The API connection was refused during this checkpoint. No lab resources were applied and no successful server dry-run or runtime result is claimed.
-
-Once the practice cluster is available, follow the [operations runbook](04-bookshop-operations/runbook.md) and each topic's prerequisite checks. The main remaining evidence is:
-
-| Area | Runtime evidence to collect |
+| Questions | Evidence observed |
 | --- | --- |
-| Base and ordinary Pods | Admission, image pulls, readiness, page responses, lifecycle/restart observations |
-| Placement and capacity | Node placement, available metrics, bounded HPA changes, optional VPA recommendations |
-| Access | Allowed/blocked/restored network traffic and allowed/denied RBAC checks |
-| Packaging | Helm installation/test/upgrade/rollback and Kustomize apply/base restoration |
-| Storage and disruption | Bound claim, retained note after Pod replacement, allowed/blocked dry-run evictions |
-| Reload and security | Changed page on unchanged Pod, filesystem restrictions, positive/negative admission results |
-| Shutdown and mesh | Hook/signal observations; mesh-specific checks only where an existing test mesh is provided |
+| Shared setup | Both catalog Deployments became available and served their pages |
+| 81-84 | Scheduling mismatch, crash logs, bad image, and missing ConfigMap reproduced; repairs succeeded; Q84 retained the same Pod UID |
+| 86-87 | Empty Service selection and blocked readiness rollout reproduced and recovered |
+| 88 | Missing StorageClass left an unbound claim; only the unbound test claim was removed |
+| 91, 106 | Absolute internal DNS names resolved; the Q106 external name also resolved |
+| 95 | Metrics were available and bounded HPA configuration was accepted; sustained oscillation was not induced |
+| 96 | Ephemeral-storage manifest passed server dry-run; node disk exhaustion was not induced |
+| 97 | Wrong backend target port failed, then succeeded after repair; this did not test an ingress controller |
+| 98 | Cross-namespace traffic was denied, allowed for the intended client, and restored after policy cleanup |
+| 101 | Dummy finalizer held namespace deletion; removing that exact dummy finalizer completed deletion |
+| 104 | PDB rejected then allowed server-dry-run eviction; both Pod UIDs remained unchanged |
+| 107 | Helm install, upgrade, rollback to revision 1, and chart response test passed |
+| 109 | Job completed, logged the report, and TTL cleanup removed it and its Pod; CronJob history pruning was not tested |
+| 110 | Restricted admission accepted the good Pod and rejected the root variant in dry-run; the running good Pod reported UID 1000 |
 
-Record missing add-ons as skipped dependencies. The concept-only orchestration and mesh exercises can be completed from authored files; they do not establish a deployed Swarm, ECS, or mesh environment.
+The corrected Q47 PowerShell completion wait and subsequent inspector logs also passed. Q58's CRD discovery returned explicit served/storage flags. Their [targeted results](quality/runtime-47-58.json) include successful cleanup.
 
-The full current content map is in [COVERAGE.md](COVERAGE.md).
+All new exercises used absent-before-test learning namespaces, which were removed afterward. Real node drains, production releases, datastore state, and application credentials were not changed.
+
+## Earlier evidence and remaining limits
+
+The [earlier platform/reliability results](../.tmp-source-review/new40-live-results.json) include metrics, structured logs, quotas, topology, cert-manager issuance, image pulling, EndpointSlices, admission, scheduling, Kustomize recovery, native sidecars, NetworkPolicy, Secret round-trip, and owner-reference cleanup. Initial headless-DNS and asynchronous-inspector failures have [successful retry evidence](../.tmp-source-review/new40-live-retry-results.json). This review did not rerun every previously passing exercise.
+
+External Secrets, KEDA, Argo CD, Flux, and service-mesh integrations remain conditional on installed controllers. Administrator investigations involving etcd maintenance, real credential rotation, operator/control-plane upgrades, certificate renewal, storage recovery, cloud costs, or actual node drain remain documented investigation/tabletop exercises. Their written review is complete; their production procedures are not claimed as executed.

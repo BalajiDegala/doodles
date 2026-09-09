@@ -1,0 +1,91 @@
+{
+  "date": "2026-09-09T17:40:57.503Z",
+  "context": "rancher-desktop",
+  "serverVersion": "v1.33.5+k3s1",
+  "results": [
+    {
+      "name": "Base catalogs",
+      "status": "passed"
+    },
+    {
+      "name": "Q81 scheduler fault and repair",
+      "status": "passed"
+    },
+    {
+      "name": "Q82 previous crash logs and repair",
+      "status": "passed"
+    },
+    {
+      "name": "Q83 pull failure and repair",
+      "status": "passed"
+    },
+    {
+      "name": "Q84 missing ConfigMap and same-Pod recovery",
+      "status": "passed"
+    },
+    {
+      "name": "Q86 missing Service selector and repair",
+      "status": "passed"
+    },
+    {
+      "name": "Q87 failed readiness rollout and recovery",
+      "status": "passed"
+    },
+    {
+      "name": "Q88 unbound missing-class PVC",
+      "status": "passed"
+    },
+    {
+      "name": "Q91 cluster DNS absolute-name sample",
+      "status": "passed"
+    },
+    {
+      "name": "Q95 HPA metrics and bounded configuration",
+      "status": "passed"
+    },
+    {
+      "name": "Q96 ephemeral-storage manifest server preview",
+      "status": "passed"
+    },
+    {
+      "name": "Q97 wrong targetPort and repair",
+      "status": "passed"
+    },
+    {
+      "name": "Q98 cross-namespace deny, allow, and restore",
+      "status": "passed"
+    },
+    {
+      "name": "Q101 dummy finalizer deletion lifecycle",
+      "status": "passed"
+    },
+    {
+      "name": "Q104 PDB denies/allows dry-run eviction without deletion",
+      "status": "passed"
+    },
+    {
+      "name": "Q106 internal/external DNS sample",
+      "status": "passed"
+    },
+    {
+      "name": "Q107 Helm install/upgrade/rollback/test",
+      "status": "passed"
+    },
+    {
+      "name": "Q109 completed Job and TTL dependent cleanup",
+      "status": "passed"
+    },
+    {
+      "name": "Q110 Restricted admission and runtime UID",
+      "status": "passed"
+    },
+    {
+      "name": "Cleanup k8s-learning-incidents",
+      "status": "passed"
+    },
+    {
+      "name": "Cleanup k8s-learning-governance",
+      "status": "passed"
+    }
+  ]
+}

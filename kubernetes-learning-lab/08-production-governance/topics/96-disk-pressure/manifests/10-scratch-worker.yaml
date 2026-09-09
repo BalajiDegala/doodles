@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: q96-scratch
+  namespace: k8s-learning-governance
+  labels:
+    exercise: q96
+spec:
+  automountServiceAccountToken: false
+  nodeSelector:
+    kubernetes.io/os: linux
+  terminationGracePeriodSeconds: 15
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: worker
+      image: busybox:1.36
+      command:
+        - /bin/sh
+        - -c
+      args:
+        - echo training > /scratch/note; sleep 3600
+      ports:
+        - name: http
+          containerPort: 8080
+      resources:
+        requests:
+          cpu: 25m
+          memory: 32Mi
+          ephemeral-storage: 20Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi
+          ephemeral-storage: 40Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: scratch
+          mountPath: /scratch
+  restartPolicy: Never
+  volumes:
+    - name: scratch
+      emptyDir:
+        sizeLimit: 16Mi

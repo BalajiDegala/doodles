@@ -1,4 +1,4 @@
-# cert-manager and TLS certificates: reading the manifests
+# 50. cert-manager and TLS certificates: reading the manifests
 
 Files: [self-signed Issuer](optional/10-issuer.yaml) and [Certificate](optional/20-certificate.yaml).
 

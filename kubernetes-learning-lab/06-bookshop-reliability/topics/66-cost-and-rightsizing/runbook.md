@@ -1,4 +1,4 @@
-# Cost allocation and right-sizing: runbook
+# 66. Cost allocation and right-sizing: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

@@ -1,0 +1,242 @@
+[
+  {
+    "number": 81,
+    "folder": "81-pod-pending",
+    "chapter": "07-production-incidents",
+    "title": "Pod stuck in Pending",
+    "sourcePages": "38",
+    "mode": "Fault and repair"
+  },
+  {
+    "number": 82,
+    "folder": "82-crashloopbackoff",
+    "chapter": "07-production-incidents",
+    "title": "Pod stuck in CrashLoopBackOff",
+    "sourcePages": "38-39",
+    "mode": "Fault and repair"
+  },
+  {
+    "number": 83,
+    "folder": "83-image-pull-backoff",
+    "chapter": "07-production-incidents",
+    "title": "Pod stuck in ImagePullBackOff",
+    "sourcePages": "39-40",
+    "mode": "Fault and repair"
+  },
+  {
+    "number": 84,
+    "folder": "84-container-creating",
+    "chapter": "07-production-incidents",
+    "title": "Pod stuck in ContainerCreating",
+    "sourcePages": "40",
+    "mode": "Fault and repair"
+  },
+  {
+    "number": 85,
+    "folder": "85-node-notready",
+    "chapter": "07-production-incidents",
+    "title": "Node NotReady: diagnose without losing workloads",
+    "sourcePages": "40-41",
+    "mode": "Read-only investigation"
+  },
+  {
+    "number": 86,
+    "folder": "86-service-routing",
+    "chapter": "07-production-incidents",
+    "title": "Service not routing traffic to Pods",
+    "sourcePages": "41",
+    "mode": "Fault and repair"
+  },
+  {
+    "number": 87,
+    "folder": "87-rollout-stuck",
+    "chapter": "07-production-incidents",
+    "title": "Deployment rollout stuck",
+    "sourcePages": "41-42",
+    "mode": "Fault and repair"
+  },
+  {
+    "number": 88,
+    "folder": "88-pvc-pending",
+    "chapter": "07-production-incidents",
+    "title": "PVC stuck in Pending",
+    "sourcePages": "42",
+    "mode": "Bounded storage investigation"
+  },
+  {
+    "number": 89,
+    "folder": "89-oomkilled",
+    "chapter": "07-production-incidents",
+    "title": "OOMKilled while application memory appears normal",
+    "sourcePages": "42-43",
+    "mode": "Read-only investigation"
+  },
+  {
+    "number": 90,
+    "folder": "90-rolling-503",
+    "chapter": "07-production-incidents",
+    "title": "Intermittent 503 errors during rolling updates",
+    "sourcePages": "43",
+    "mode": "Read-only investigation and reusable drill"
+  },
+  {
+    "number": 91,
+    "folder": "91-intermittent-dns",
+    "chapter": "07-production-incidents",
+    "title": "DNS resolution fails intermittently inside Pods",
+    "sourcePages": "43-44",
+    "mode": "Bounded DNS observation"
+  },
+  {
+    "number": 92,
+    "folder": "92-etcd-space",
+    "chapter": "07-production-incidents",
+    "title": "etcd full: cluster writes blocked",
+    "sourcePages": "44",
+    "mode": "Administrator investigation"
+  },
+  {
+    "number": 93,
+    "folder": "93-secret-log-leak",
+    "chapter": "07-production-incidents",
+    "title": "Secret exposed in logs: incident response",
+    "sourcePages": "44-45",
+    "mode": "Incident tabletop"
+  },
+  {
+    "number": 94,
+    "folder": "94-operator-upgrade",
+    "chapter": "07-production-incidents",
+    "title": "Cluster upgrade breaks CRDs and operators",
+    "sourcePages": "45",
+    "mode": "Read-only investigation"
+  },
+  {
+    "number": 95,
+    "folder": "95-hpa-flapping",
+    "chapter": "07-production-incidents",
+    "title": "HPA repeatedly scales up and down",
+    "sourcePages": "45-46",
+    "mode": "Optional autoscaling inspection"
+  },
+  {
+    "number": 96,
+    "folder": "96-disk-pressure",
+    "chapter": "08-production-governance",
+    "title": "Pod evicted due to disk pressure",
+    "sourcePages": "46",
+    "mode": "Read-only investigation and manifest preview"
+  },
+  {
+    "number": 97,
+    "folder": "97-ingress-502",
+    "chapter": "08-production-governance",
+    "title": "Ingress returns 502 after deployment",
+    "sourcePages": "46-47",
+    "mode": "Backend fault and repair"
+  },
+  {
+    "number": 98,
+    "folder": "98-cross-namespace-policy",
+    "chapter": "08-production-governance",
+    "title": "Cross-namespace traffic blocked by NetworkPolicy",
+    "sourcePages": "47",
+    "mode": "Policy fault and repair"
+  },
+  {
+    "number": 99,
+    "folder": "99-statefulset-terminating",
+    "chapter": "08-production-governance",
+    "title": "StatefulSet Pod stuck in Terminating",
+    "sourcePages": "48",
+    "mode": "Read-only investigation"
+  },
+  {
+    "number": 100,
+    "folder": "100-cost-spike",
+    "chapter": "08-production-governance",
+    "title": "Cluster costs doubled overnight",
+    "sourcePages": "48-49",
+    "mode": "Read-only cost investigation"
+  },
+  {
+    "number": 101,
+    "folder": "101-namespace-finalizers",
+    "chapter": "08-production-governance",
+    "title": "Namespace deletion blocked by finalizers",
+    "sourcePages": "49",
+    "mode": "Controlled finalizer drill"
+  },
+  {
+    "number": 102,
+    "folder": "102-admission-webhook-outage",
+    "chapter": "08-production-governance",
+    "title": "Admission webhook blocks deployments cluster-wide",
+    "sourcePages": "49-50",
+    "mode": "Read-only incident investigation"
+  },
+  {
+    "number": 103,
+    "folder": "103-expired-certificates",
+    "chapter": "08-production-governance",
+    "title": "Expired certificate breaks kubelet/API communication",
+    "sourcePages": "50-51",
+    "mode": "Administrator investigation"
+  },
+  {
+    "number": 104,
+    "folder": "104-pdb-drain",
+    "chapter": "08-production-governance",
+    "title": "Node drain disrupts workloads despite a PDB",
+    "sourcePages": "51",
+    "mode": "Dry-run eviction experiment"
+  },
+  {
+    "number": 105,
+    "folder": "105-api-overload",
+    "chapter": "08-production-governance",
+    "title": "API server overloaded: slow kubectl and timeouts",
+    "sourcePages": "51-52",
+    "mode": "Read-only control-plane investigation"
+  },
+  {
+    "number": 106,
+    "folder": "106-external-dns",
+    "chapter": "08-production-governance",
+    "title": "Pod resolves internal DNS but not external DNS",
+    "sourcePages": "52",
+    "mode": "Bounded DNS observation"
+  },
+  {
+    "number": 107,
+    "folder": "107-helm-pending-upgrade",
+    "chapter": "08-production-governance",
+    "title": "Helm release stuck in pending-upgrade",
+    "sourcePages": "52-53",
+    "mode": "Optional Helm recovery rehearsal"
+  },
+  {
+    "number": 108,
+    "folder": "108-wrong-pv-data",
+    "chapter": "08-production-governance",
+    "title": "Production accidentally mounts staging PV data",
+    "sourcePages": "53",
+    "mode": "Read-only data-provenance investigation"
+  },
+  {
+    "number": 109,
+    "folder": "109-cronjob-accumulation",
+    "chapter": "08-production-governance",
+    "title": "CronJob accumulates thousands of completed Pods",
+    "sourcePages": "53-54",
+    "mode": "Bounded Job cleanup drill"
+  },
+  {
+    "number": 110,
+    "folder": "110-nonroot-enforcement",
+    "chapter": "08-production-governance",
+    "title": "Container runs as root despite Pod Security enforcement",
+    "sourcePages": "54",
+    "mode": "Controlled admission test"
+  }
+]

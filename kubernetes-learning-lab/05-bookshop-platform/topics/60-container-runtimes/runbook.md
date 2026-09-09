@@ -1,4 +1,4 @@
-# CRI, containerd, and CRI-O: runbook
+# 60. CRI, containerd, and CRI-O: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

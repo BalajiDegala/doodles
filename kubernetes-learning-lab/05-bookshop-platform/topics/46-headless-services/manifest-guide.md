@@ -1,4 +1,4 @@
-# Headless Services: reading the manifests
+# 46. Headless Services: reading the manifests
 
 File: [catalog-peers Service](manifests/10-headless.yaml).
 

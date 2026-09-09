@@ -1,4 +1,4 @@
-# Kubernetes at scale: runbook
+# 68. Kubernetes at scale: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

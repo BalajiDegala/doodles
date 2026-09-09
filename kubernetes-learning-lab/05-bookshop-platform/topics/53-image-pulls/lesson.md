@@ -1,4 +1,4 @@
-# Image pulls and registry authentication
+# 53. Image pulls and registry authentication
 
 ## Concise technical summary
 

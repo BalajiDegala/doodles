@@ -1,4 +1,4 @@
-# Blue-green and canary releases: reading the manifests
+# 43. Blue-green and canary releases: reading the manifests
 
 Reuse the [blue-green manifest guide](../../../02-blue-green-deployment/manifest-guide.md) and [canary manifest guide](../../../03-canary-deployment/manifest-guide.md).
 

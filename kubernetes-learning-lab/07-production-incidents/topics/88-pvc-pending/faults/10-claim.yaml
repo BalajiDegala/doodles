@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: q88-claim
+  namespace: k8s-learning-incidents
+spec:
+  storageClassName: bookshop-q88-missing
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Mi

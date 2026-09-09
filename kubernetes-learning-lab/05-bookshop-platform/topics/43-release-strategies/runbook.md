@@ -1,4 +1,4 @@
-# Blue-green and canary releases: runbook
+# 43. Blue-green and canary releases: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

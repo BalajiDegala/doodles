@@ -1,4 +1,4 @@
-# Kyverno, Gatekeeper, and supply-chain policy: runbook
+# 69. Kyverno, Gatekeeper, and supply-chain policy: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

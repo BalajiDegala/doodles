@@ -1,4 +1,4 @@
-# Karpenter and Cluster Autoscaler: reading the manifests
+# 70. Karpenter and Cluster Autoscaler: reading the manifests
 
 The [Deployment](../../manifests/20-deployment.yaml) requests small resources and Linux placement. These constraints become part of capacity feasibility; observed low CPU alone does not mean a Pod can schedule.
 

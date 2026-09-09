@@ -1,4 +1,4 @@
-# EndpointSlices and Endpoints
+# 55. EndpointSlices and Endpoints
 
 ## Concise technical summary
 

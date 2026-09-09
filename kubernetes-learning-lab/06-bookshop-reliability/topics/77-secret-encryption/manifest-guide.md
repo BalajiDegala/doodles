@@ -1,4 +1,4 @@
-# Secret encryption at rest: reading the manifests
+# 77. Secret encryption at rest: reading the manifests
 
 File: [public dummy Secret](manifests/10-practice-secret.yaml). `type: Opaque` is a general Secret type. `stringData.note: public-training-value` is authoring convenience; the API returns the value under base64-encoded `data.note`.
 

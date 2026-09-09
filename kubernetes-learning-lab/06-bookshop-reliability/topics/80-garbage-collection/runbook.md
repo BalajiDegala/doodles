@@ -1,4 +1,4 @@
-# Garbage collection and ownership: runbook
+# 80. Garbage collection and ownership: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

@@ -1,4 +1,4 @@
-# API deprecations: reading the manifests
+# 72. API deprecations: reading the manifests
 
 The base uses `apps/v1` Deployment and core `v1` Namespace, ConfigMap, and Service. Optional files introduce controller-defined APIs such as `gateway.networking.k8s.io/v1` and `keda.sh/v1alpha1`. A custom API’s version label does not follow the same lifecycle as every core API.
 

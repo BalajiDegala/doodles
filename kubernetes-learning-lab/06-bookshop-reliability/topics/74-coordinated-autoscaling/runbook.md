@@ -1,4 +1,4 @@
-# HPA, VPA, and KEDA: runbook
+# 74. HPA, VPA, and KEDA: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

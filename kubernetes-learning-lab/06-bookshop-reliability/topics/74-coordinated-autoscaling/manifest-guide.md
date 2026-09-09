@@ -1,4 +1,4 @@
-# HPA, VPA, and KEDA: reading the manifests
+# 74. HPA, VPA, and KEDA: reading the manifests
 
 Files: [target Deployment](manifests/10-event-counter.yaml) and [optional ScaledObject](optional/20-scaledobject.yaml).
 

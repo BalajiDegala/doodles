@@ -1,4 +1,4 @@
-# Mesh identity, traffic, and observability: reading the manifests
+# 63. Mesh identity, traffic, and observability: reading the manifests
 
 Read the [base Service](../../manifests/30-service.yaml) and [earlier mesh foundations](../../../04-bookshop-operations/topics/40-service-mesh-foundations/manifest-guide.md). The authored port and selector describe Kubernetes routing only.
 

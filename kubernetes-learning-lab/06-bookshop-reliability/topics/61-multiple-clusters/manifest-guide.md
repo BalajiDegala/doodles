@@ -1,4 +1,4 @@
-# Multi-cluster strategies: reading the manifests
+# 61. Multi-cluster strategies: reading the manifests
 
 Read the [reliability namespace](../../manifests/00-namespace.yaml) and [Service](../../manifests/30-service.yaml). The namespace isolates names inside one cluster; creating another namespace is not a second cluster. Service DNS normally resolves within its cluster’s DNS domain.
 

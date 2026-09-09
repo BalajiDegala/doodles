@@ -1,4 +1,4 @@
-# CRI, containerd, and CRI-O
+# 60. CRI, containerd, and CRI-O
 
 ## Concise technical summary
 

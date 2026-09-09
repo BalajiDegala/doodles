@@ -1,4 +1,4 @@
-# ResourceQuota and LimitRange: reading the manifests
+# 44. ResourceQuota and LimitRange: reading the manifests
 
 Files: [namespace](manifests/00-namespace.yaml), [LimitRange](manifests/10-limitrange.yaml), [quota](manifests/20-quota.yaml), [first Pod](workloads/budget-one.yaml), [second Pod](workloads/budget-two.yaml), [too-large input](negative/too-large.yaml), and [extra-Pod input](negative/budget-extra.yaml).
 

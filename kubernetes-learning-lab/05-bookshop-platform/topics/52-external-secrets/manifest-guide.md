@@ -1,4 +1,4 @@
-# External Secrets Operator: reading the manifests
+# 52. External Secrets Operator: reading the manifests
 
 Files: [fake SecretStore](optional/10-fake-store.yaml) and [ExternalSecret](optional/20-external-secret.yaml). Both require served `external-secrets.io/v1` APIs.
 

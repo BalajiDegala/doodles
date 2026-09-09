@@ -1,0 +1,117 @@
+[
+  {
+    "n": 91,
+    "slug": "intermittent-dns",
+    "title": "DNS resolution fails intermittently inside Pods",
+    "pages": "43-44",
+    "mode": "Bounded DNS observation",
+    "summary": [
+      "Compare exact query names, resolver configuration, and failure times.",
+      "Search paths and ndots can generate extra lookups before an absolute name is tried.",
+      "CoreDNS, upstream resolvers, network loss, and conntrack can fail independently.",
+      "Repeat a small controlled sample and correlate it with DNS and node telemetry."
+    ],
+    "cue": "Name, resolver, path, timestamp.",
+    "plain": "A clerk searches local shelves before consulting the central directory. Extra searches can delay the result; an overloaded directory or lost phone call can also cause failure.",
+    "story": "The Bookshop compares its short Service name with an absolute cluster DNS name from a disposable reader. The sample is intentionally small.",
+    "detail": "Read /etc/resolv.conf in the affected Pod. A trailing dot marks an absolute name and avoids search-suffix expansion for that query. The cluster domain is configurable; cluster.local is only the common lab assumption. Applications and resolver libraries may have different retry/cache behavior.\n\nCompare NXDOMAIN, SERVFAIL, and timeouts rather than treating every nonzero lookup as the same error. Investigate CoreDNS load, latency/error metrics, node packet loss, and conntrack evidence. NodeLocal DNSCache is a platform option with compatibility and operation costs, not an automatic fix for every DNS failure.",
+    "guide": "[Reader](manifests/10-reader.yaml) is a non-root BusyBox Pod using the default ClusterFirst DNS policy. It performs DNS queries from the same namespace as the base. No CoreDNS ConfigMap, node sysctl, or DNSCache DaemonSet is modified.",
+    "prereq": "Healthy catalog, reader Pod/exec permission, and known cluster DNS domain. If external monitoring is unavailable, record only the sample results.",
+    "run": "~~~powershell\nK apply -f topics/%TOPIC%/manifests/\nK wait --for=condition=Ready pod/q91-reader --timeout=120s\nK exec q91-reader -- cat /etc/resolv.conf\n$domain = 'cluster.local'\n$fqdn = \"%APP%.$ns.svc.$domain.\"\nK exec q91-reader -- nslookup %APP%\n1..5 | ForEach-Object {\n Get-Date -Format o\n K exec q91-reader -- nslookup $fqdn\n}\n~~~\n\nSet domain from the observed search list before using the absolute query. For cluster DNS inspection, if permitted:\n\n~~~powershell\nC -n kube-system get pods -l k8s-app=kube-dns -o wide\nC -n kube-system get service kube-dns\n~~~",
+    "verify": "Expect the absolute query to return the catalog Service address. Preserve the full lookup output: BusyBox may show search-name failures beside a successful answer. Five successful queries prove only this sample, not absence of intermittent failures under load.",
+    "cleanup": "~~~powershell\nK delete pod q91-reader --ignore-not-found\n~~~\n\nAny future resolver/cache change needs platform-specific rollout and rollback.",
+    "sources": "[Debug DNS resolution](https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/), [NodeLocal DNSCache](https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/)"
+  },
+  {
+    "n": 92,
+    "slug": "etcd-space",
+    "title": "etcd full: cluster writes blocked",
+    "pages": "44",
+    "mode": "Administrator investigation",
+    "summary": [
+      "An etcd NOSPACE alarm can block normal writes even when reads still work.",
+      "Backend quota pressure differs from the host filesystem running out of space.",
+      "Compaction drops old revisions; defragmentation reclaims backend file space.",
+      "After recovery, clear the applicable alarm and verify writes and member health."
+    ],
+    "cue": "Quota or disk? Compact, reclaim, disarm, verify.",
+    "plain": "The office archive is full of old revisions. Removing old index entries and physically repacking the archive are separate jobs.",
+    "story": "Maya distinguishes a full cluster datastore from a catalog error using an administrator evidence checklist. The lab never fills or restores the live datastore.",
+    "detail": "Have the datastore owner inspect alarms, per-member status, total backend size, in-use size, quota, and filesystem/inode capacity. Supported maintenance order depends on the deployed etcd version and platform. Read/delete behavior during a space alarm differs from normal writes; calling the whole cluster simply read-only hides recovery details.\n\nStop the writer generating excessive objects, preserve a usable backup/recovery path, compact an approved revision, and defragment members sequentially while maintaining quorum. After enough space is recovered, the owner disarms NOSPACE and tests a controlled write. Raising quota alone does not fix unbounded object churn. Do not delete Kubernetes keys directly through etcd.",
+    "guide": "There is no etcd mutation manifest. Workload YAML cannot compact the datastore. The [earlier disaster-recovery guide](../../../06-bookshop-reliability/topics/65-disaster-recovery/manifest-guide.md) distinguishes API state from volume data. The important fields are member health, revision, backend bytes, quota, and alarms.",
+    "prereq": "Identify the datastore implementation first: some local distributions use a different backend, and managed control planes hide direct etcd access. etcdctl reads below are for the authorized datastore host with its existing secure endpoint/TLS configuration.",
+    "run": "## Collect Kubernetes symptoms\n\n~~~powershell\nC get --raw=/readyz --request-timeout=5s\nK get events --sort-by=.metadata.creationTimestamp\n~~~\n\nA failed readyz is evidence, not proof of NOSPACE. Ask the datastore owner to correlate the error.\n\n## Administrator read commands\n\nWith the correct version of etcdctl and preconfigured endpoint/TLS credentials, the owner can inspect:\n\n~~~console\netcdctl endpoint status --cluster --write-out=table\netcdctl alarm list\n~~~\n\nRecord the overloaded member, quota versus actual filesystem pressure, recent object churn, backup status, and approved maintenance sequence. Do not run maintenance against an unknown endpoint.",
+    "verify": "Recovery requires healthy quorum, sizes below the appropriate limits, cleared NOSPACE alarms, resumed controller progress, and a verified controlled write. The tabletop is complete when every step has an owner and version-matched procedure; it is not a live datastore recovery.",
+    "cleanup": "Read-only investigation requires no cleanup. Compaction cannot be reversed by a manifest rollback; datastore recovery must follow the tested platform backup/restore plan.",
+    "sources": "[etcd maintenance](https://etcd.io/docs/v3.6/op-guide/maintenance/), [Operating etcd for Kubernetes](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/)"
+  },
+  {
+    "n": 93,
+    "slug": "secret-log-leak",
+    "title": "Secret exposed in logs: incident response",
+    "pages": "44-45",
+    "mode": "Incident tabletop",
+    "summary": [
+      "Revoke or rotate the exposed credential at its authoritative source.",
+      "Update consumers and verify the old credential no longer grants access.",
+      "Restrict log access and assess exposure while preserving required evidence.",
+      "Fix the logging path and prevent credentials from entering new records."
+    ],
+    "cue": "Revoke, replace, contain evidence, prevent recurrence.",
+    "plain": "A staff key was copied onto public receipts. Printing clean receipts now does not invalidate copies already taken.",
+    "story": "Maya rehearses a catalog credential leak using a worksheet. No real Secret or log payload is printed and no evidence is deleted by the exercise.",
+    "detail": "Identify the credential owner, privileges, validity period, log destinations, downstream copies, access history, and any suspicious use. Changing only a Kubernetes Secret does not revoke the old credential at the database or external provider. Coordinate rotation with dependent applications; some read environment values only at startup while file consumers need reload support.\n\nRestrict affected log access, preserve evidence under the incident/retention procedure, and arrange redaction or removal with the evidence owner. Blind deletion can destroy investigation records without removing exports or backups. Metadata-level Kubernetes auditing omits request/response bodies; it should not be blamed for logging Secret bodies. Neither environment variables nor volume mounts prevent an application from logging a value it can read.",
+    "guide": "Use the [public training Secret](../../../06-bookshop-reliability/topics/77-secret-encryption/manifests/10-practice-secret.yaml) only as an example of data flow. Its dummy value is not a real credential. Review consumer references, reload/restart behavior, audit policy levels, log destinations, and retention controls without opening unrelated Secret values.",
+    "prereq": "A hypothetical credential and identified application, security, and log-system owners. Optional API inspection needs only permission to read the catalog Deployment.",
+    "run": "~~~powershell\nK get deployment %APP% -o yaml\n~~~\n\nThe catalog has no real provider credential. Complete a tabletop timeline:\n\n1. Name the authoritative issuer and the operation that revokes the exposed credential.\n2. State how a replacement reaches each consumer and whether it requires reload or rollout.\n3. Define an old-credential rejection check and a new-credential service check that do not log either value.\n4. List log replicas, exports, backups, access restrictions, and evidence-retention owner.\n5. Specify the logger/redaction fix and a synthetic-value regression check.",
+    "verify": "Successful containment means the old credential is invalid, replacement consumers work, exposure scope is assessed, and new logs omit secret material. A restarted Pod or deleted log entry alone proves none of that.",
+    "cleanup": "No live secrets or logs change. In a real incident, preserve the incident record and roll back faulty application/logging changes without restoring the compromised credential.",
+    "sources": "[Good practices for Secrets](https://kubernetes.io/docs/concepts/security/secrets-good-practices/), [Kubernetes audit levels](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/)"
+  },
+  {
+    "n": 94,
+    "slug": "operator-upgrade",
+    "title": "Cluster upgrade breaks CRDs and operators",
+    "pages": "45",
+    "mode": "Read-only investigation",
+    "summary": [
+      "Operator code, served APIs, CRD schemas, and conversion webhooks must stay compatible.",
+      "CRD storedVersions records storage-version history, not a complete compatibility result.",
+      "A failed conversion or admission webhook can prevent normal API work.",
+      "Recover the owning controller before migrating or deleting custom resources."
+    ],
+    "cue": "Controller, served version, stored data, webhook.",
+    "plain": "The order form changed, but the clerk and translator still expect the older form. Destroying the order archive does not repair the translation.",
+    "story": "Maya inventories a supplied operator and CRD after a hypothetical upgrade. The exercise does not install or remove an operator.",
+    "detail": "Distinguish an operator using a removed Kubernetes API from a rejected custom-resource schema or unreachable conversion service. CRD spec.versions lists served/storage flags; status.storedVersions helps identify stored encodings still requiring migration. Setting those fields alone is not a data migration.\n\nFollow the operator's supported source/target upgrade path. Repair its Deployment, Service endpoints, certificates, or conversion implementation as the evidence requires. Do not delete CRDs to reinstall them: deletion also removes their custom resources. Temporarily weakening a webhook's failure policy can remove a security control and is an incident-owner decision, not the default fix.",
+    "guide": "Inspect one actual CRD's versions, schema, conversion configuration, and status. Compare the operator's image version with its support matrix. The [API deprecation walkthrough](../../../06-bookshop-reliability/topics/72-api-deprecations/manifest-guide.md) distinguishes discovery from future compatibility.",
+    "prereq": "An existing named operator/CRD and read permission. With none installed, complete the compatibility worksheet from official operator documentation and mark runtime inspection skipped.",
+    "run": "~~~powershell\nC get crds\n$crd = 'PASTE_CRD_NAME'\n$operatorNs = 'PASTE_OPERATOR_NAMESPACE'\n$operator = 'PASTE_OPERATOR_DEPLOYMENT'\nC get crd $crd -o yaml\nC -n $operatorNs get deployment $operator -o yaml\nC -n $operatorNs logs deployment/$operator --tail=100\nC -n $operatorNs get pods,svc,endpointslices\n~~~\n\nUse inspected names. Classify the error as removed API, schema validation, conversion, admission, or controller startup. Record source/target versions and a supported repair sequence.",
+    "verify": "A real recovery needs operator readiness, successful existing-object reads/conversion, and a permitted create/update/reconcile check for the affected CR type. Merely listing CRDs or seeing all storedVersions marked served does not prove compatibility.",
+    "cleanup": "All listed commands are read-only. Follow the operator's documented rollback/migration procedure; schema changes and persistent external effects may prevent a simple image rollback.",
+    "sources": "[CRD versioning](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/), [API migration guide](https://kubernetes.io/docs/reference/using-api/deprecation-guide/)"
+  },
+  {
+    "n": 95,
+    "slug": "hpa-flapping",
+    "title": "HPA repeatedly scales up and down",
+    "pages": "45-46",
+    "mode": "Optional autoscaling inspection",
+    "summary": [
+      "HPA reacts to sampled metrics and can oscillate around a target.",
+      "Scale-down stabilization uses recent recommendations to avoid premature shrinking.",
+      "Rate limits constrain how quickly replicas may change.",
+      "Inspect metric quality, requests, and competing writers before tuning behavior."
+    ],
+    "cue": "Check the signal, then slow the shrink.",
+    "plain": "Maya closes a counter after each quiet moment and immediately reopens it when the queue returns. A longer observation window avoids constant rearrangement.",
+    "story": "An optional HPA controls a separate small catalog worker with bounded replicas and conservative scale-down settings. The exercise inspects behavior without generating unbounded load.",
+    "detail": "A CPU utilization target uses requests as its denominator. Changing requests through VPA can change utilization without changing CPU work. Multiple writers to replicas can resemble HPA flapping. Compare HPA recommendations, events, metric freshness, readiness delays, and application demand history.\n\nThe scale-down window chooses the highest relevant recent recommendation; it is not simply a timer requiring continuously low metrics. Its interaction with missing data, tolerance, policies, and multiple metrics matters. Increasing the target may reduce responsiveness or cause undercapacity. Do not choose a universal percentage from a single trace.",
+    "guide": "[Target](manifests/10-worker.yaml) is §q95-worker§ with no authored replicas. [Optional HPA](optional/20-hpa.yaml) uses autoscaling/v2, min=1, max=3, CPU target 70%, scaleDown.stabilizationWindowSeconds=300, and a limit of one removed Pod per 60 seconds. These are teaching values, not universal production settings.",
+    "prereq": "Metrics-server/resource metrics, permission for HPA/Deployment, and capacity for up to three small workers. If metrics are absent, inspect and server-dry-run only.",
+    "run": "~~~powershell\nC get --raw=/apis/metrics.k8s.io/v1beta1/nodes --request-timeout=5s\nK apply -f topics/%TOPIC%/manifests/\nK rollout status deployment/q95-worker --timeout=120s\nK apply --dry-run=server -f topics/%TOPIC%/optional/\n~~~\n\nOnly with functioning metrics:\n\n~~~powershell\nK apply -f topics/%TOPIC%/optional/\nK describe hpa q95-worker\nK get hpa q95-worker -w\n~~~\n\nStop with Ctrl+C after collecting conditions and metrics. Relate a provided oscillation trace to the 300-second window and 60-second rate limit; no spontaneous scale-up is expected from this idle server.",
+    "verify": "AbleToScale/ScalingActive and valid metrics demonstrate a usable HPA, not elimination of production flapping. Proving tuning requires a representative demand trace and enough time to observe both scale directions.",
+    "cleanup": "~~~powershell\nK delete hpa q95-worker --ignore-not-found\nK delete deployment q95-worker --ignore-not-found\n~~~\n\nFor a real HPA, restore the reviewed behavior configuration if latency or capacity worsens.",
+    "sources": "[Horizontal Pod Autoscaling](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/)"
+  }
+]

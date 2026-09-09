@@ -1,4 +1,4 @@
-# Scheduler filtering and scoring: reading the manifests
+# 59. Scheduler filtering and scoring: reading the manifests
 
 File: [custom-scheduler wait](manifests/10-custom-scheduler.yaml).
 

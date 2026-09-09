@@ -1,4 +1,4 @@
-# Kyverno, Gatekeeper, and supply-chain policy: reading the manifests
+# 69. Kyverno, Gatekeeper, and supply-chain policy: reading the manifests
 
 Read the [Deployment](../../manifests/20-deployment.yaml). It includes requests/limits, non-root controls, and ownership labels, but uses a mutable image tag. That is a visible gap if the proposed policy requires digests.
 

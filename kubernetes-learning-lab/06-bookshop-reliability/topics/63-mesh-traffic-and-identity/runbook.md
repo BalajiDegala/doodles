@@ -1,4 +1,4 @@
-# Mesh identity, traffic, and observability: runbook
+# 63. Mesh identity, traffic, and observability: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

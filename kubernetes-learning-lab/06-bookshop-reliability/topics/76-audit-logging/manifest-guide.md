@@ -1,4 +1,4 @@
-# Kubernetes audit logging: reading the manifests
+# 76. Kubernetes audit logging: reading the manifests
 
 Reference: [audit policy](reference/audit-policy.yaml). `audit.k8s.io/v1` Policy is API-server configuration, not a namespaced resource for kubectl apply.
 

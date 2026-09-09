@@ -1,4 +1,4 @@
-# Cluster upgrade planning: runbook
+# 64. Cluster upgrade planning: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

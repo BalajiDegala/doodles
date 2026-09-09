@@ -1,4 +1,4 @@
-# Centralized logging: runbook
+# 42. Centralized logging: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

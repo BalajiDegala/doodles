@@ -1,4 +1,4 @@
-# Gateway API and Ingress
+# 67. Gateway API and Ingress
 
 ## Concise technical summary
 
