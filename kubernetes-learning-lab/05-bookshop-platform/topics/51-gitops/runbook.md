@@ -1,4 +1,4 @@
-# GitOps with Argo CD and Flux: runbook
+# 51. GitOps with Argo CD and Flux: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

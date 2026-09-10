@@ -1,4 +1,4 @@
-# Zero-trust networking: runbook
+# 75. Zero-trust networking: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

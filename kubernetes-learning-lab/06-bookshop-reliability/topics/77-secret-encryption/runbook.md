@@ -1,4 +1,4 @@
-# Secret encryption at rest: runbook
+# 77. Secret encryption at rest: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

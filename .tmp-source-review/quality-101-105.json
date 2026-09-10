@@ -1,0 +1,117 @@
+[
+  {
+    "n": 101,
+    "slug": "namespace-finalizers",
+    "title": "Namespace deletion blocked by finalizers",
+    "pages": "49",
+    "mode": "Controlled finalizer drill",
+    "summary": [
+      "Namespace deletion waits for discovery, object deletion, and required finalizers.",
+      "kubectl get all does not enumerate every namespaced resource type.",
+      "Restore the cleanup controller before considering removal of its finalizer.",
+      "A deliberate dummy finalizer can teach the lifecycle without bypassing real cleanup."
+    ],
+    "cue": "Find the object, find its cleanup owner.",
+    "plain": "Maya cannot close a branch while an equipment return is unsigned. Removing the signature requirement is safe only if the return has actually been handled.",
+    "story": "A separate namespace contains one ConfigMap with a deliberately controllerless training finalizer. The runbook removes only that known marker after showing why deletion waits.",
+    "detail": "Read namespace status.conditions for discovery errors, remaining content, and finalizers. An unavailable aggregated API can obstruct discovery; not every stuck namespace is caused by a user object's finalizer. Enumerate discoverable namespaced kinds and record failed list permissions or API errors instead of hiding them.\n\nA real finalizer can represent cloud resource cleanup or data protection. Restore its operator and verify external cleanup before any exceptional removal. Forcing the namespace /finalize endpoint can orphan objects and does not guarantee their processes or infrastructure disappear. It is not this lab's repair.",
+    "guide": "[Namespace](manifests/00-namespace.yaml) is §k8s-learning-finalizer§. [ConfigMap](manifests/10-held-map.yaml) has only §learning.bookshop/hold-q101§ as a finalizer and no external effect. [JSON patch](reference/release-finalizer.json) first tests that exact value before removing it. This patch must never be reused for another object's finalizers.",
+    "prereq": "Fresh disposable namespace and Namespace/ConfigMap lifecycle permissions. If the namespace or q101-held map already exists, inspect ownership before starting.",
+    "run": "~~~powershell\nC get namespace k8s-learning-finalizer\nC apply -f topics/%TOPIC%/manifests/\nC delete namespace k8s-learning-finalizer --wait=false\nC get namespace k8s-learning-finalizer -o yaml\nC -n k8s-learning-finalizer get configmap q101-held -o yaml\n~~~\n\nAllow the namespace controller to process deletion. Look for deletionTimestamp and the held map's finalizer.\n\n## Discover remaining resources\n\n~~~powershell\n$kinds = C api-resources --verbs=list --namespaced -o name\nforeach ($kind in $kinds) {\n C -n k8s-learning-finalizer get $kind --ignore-not-found --request-timeout=5s\n}\n~~~\n\nDo not discard errors: discovery/list failures are useful evidence.\n\n## Release only the known dummy hold\n\n~~~powershell\nC -n k8s-learning-finalizer patch configmap q101-held --type=json --patch-file topics/%TOPIC%/reference/release-finalizer.json\nC wait --for=delete namespace/k8s-learning-finalizer --timeout=120s\n~~~",
+    "verify": "The namespace remains Terminating while the dummy finalizer exists, then disappears after that hold is removed. A failed JSON test means the object differs from the exercise: inspect it instead of forcing the patch.",
+    "cleanup": "The normal completion deletes both the map and namespace. If interrupted, inspect the known map, apply the same test-guarded patch, and finish namespace deletion. Never clear all finalizers or force namespace finalization.",
+    "sources": "[Finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/), [Kubernetes API resource discovery](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_api-resources/)"
+  },
+  {
+    "n": 102,
+    "slug": "admission-webhook-outage",
+    "title": "Admission webhook blocks deployments cluster-wide",
+    "pages": "49-50",
+    "mode": "Read-only incident investigation",
+    "summary": [
+      "A failing matching webhook can reject requests when failurePolicy is Fail.",
+      "Match scope, service endpoints, certificates, and timeout identify different blockers.",
+      "Ignore affects call failures; it does not override an explicit policy denial.",
+      "Repair the dependency or use a tightly scoped incident-approved exception."
+    ],
+    "cue": "Which webhook matches this request, and can it answer?",
+    "plain": "Every order needs a signature from a clerk whose office is unreachable. Removing every signature rule may reopen orders but also remove essential checks.",
+    "story": "Maya traces a failing catalog admission request to one named webhook. The lab does not install a broken cluster-wide webhook or weaken enforcement.",
+    "detail": "Read the API error for the webhook name, operation, resource, and reason. Inspect rules, namespaceSelector/objectSelector, match conditions, failurePolicy, timeoutSeconds, sideEffects, service reference, caBundle, endpoint readiness, and certificate names/expiry. The backend may depend on resources its own webhook prevents from being recreated.\n\nAdmission and CRD conversion webhooks are different paths. FailurePolicy=Ignore fails open for call errors/timeouts; a reachable webhook's denied response remains a denial. Security-critical policies may need Fail. Do not automatically set every webhook to Ignore or delete configurations. Reduce scope or repair backend dependencies through the established incident process.",
+    "guide": "Compare one named ValidatingWebhookConfiguration or MutatingWebhookConfiguration with its referenced namespaced Service and endpoints. The [admission lesson](../../../05-bookshop-platform/topics/57-api-admission/lesson.md) explains request ordering. A normal catalog server-dry-run can exercise matching admission without persisting a deployment change.",
+    "prereq": "Read access to admission registration and the named backend namespace. If access is denied, record the evidence and involve its owner. Do not change control-plane policy for this lesson.",
+    "run": "~~~powershell\nC get validatingwebhookconfigurations,mutatingwebhookconfigurations\nK apply --dry-run=server -f manifests/20-deployment.yaml\n~~~\n\nFor the webhook named in an actual error, inspect its real type/name:\n\n~~~powershell\n$webhook = 'PASTE_VALIDATING_CONFIGURATION'\nC get validatingwebhookconfiguration $webhook -o yaml\n$backendNs = 'PASTE_BACKEND_NAMESPACE'\n$service = 'PASTE_BACKEND_SERVICE'\nC -n $backendNs get service $service -o yaml\nC -n $backendNs get endpointslices -l \"kubernetes.io/service-name=$service\" -o yaml\n~~~\n\nFor a mutating configuration, use the matching resource type. Correlate backend logs, TLS validity, and network reachability with the request time.",
+    "verify": "A real recovery requires the intended valid request to pass, an invalid request to remain rejected, and webhook availability/latency to stabilize. A successful unrelated dry-run does not prove the failing rule was exercised.",
+    "cleanup": "Inspection and dry-run leave no workload changes. Any emergency exception must have a named owner, narrow scope, expiry, and explicit restoration check; no automatic fail-open command is included.",
+    "sources": "[Admission webhook good practices](https://kubernetes.io/docs/concepts/cluster-administration/admission-webhooks-good-practices/), [Dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)"
+  },
+  {
+    "n": 103,
+    "slug": "expired-certificates",
+    "title": "Expired certificate breaks kubelet/API communication",
+    "pages": "50-51",
+    "mode": "Administrator investigation",
+    "summary": [
+      "Kubelet client, kubelet serving, and API-server serving certificates serve different connections.",
+      "Expiry, trust, name mismatch, and clock skew can produce distinct TLS errors.",
+      "CSR approval requires verifying requester identity, signer, usages, and request details.",
+      "Renewal and reload procedures depend on the distribution and certificate owner."
+    ],
+    "cue": "Which peer, which certificate, which owner?",
+    "plain": "A staff badge, a branch sign, and head office's seal certify different things. Replacing the wrong certificate will not restore the broken relationship.",
+    "story": "Maya identifies the failed connection and its certificate owner before planning a repair. No CSR is approved and no cluster certificate is replaced by the exercise.",
+    "detail": "Kubelet client authentication concerns node-to-API requests; API-to-kubelet TLS uses the kubelet's serving certificate. API server serving TLS is a third path. Capture the exact x509 error and check validity dates, SANs, issuer trust, and system time.\n\nFor kubeadm-managed certificates, the operator can use kubeadm certs check-expiration; this does not inventory every kubelet certificate. Renewal may require static-Pod restart/component reload and kubeconfig updates according to the documented procedure. Managed services and other distributions own different parts. Never mass-approve pending CSRs or assume every expired node requires replacement.",
+    "guide": "Inspect Node Ready and CSR spec.username, signerName, usages, and status.conditions. A CSR name or Pending state is not proof it belongs to a trusted node. Certificate public metadata can be inspected by the operator without exposing private keys. No Secret containing private keys is exported.",
+    "prereq": "Node/CSR read access; host-side certificate checks require the relevant administrator and known distribution. Use a cluster with no incident as a baseline only.",
+    "run": "~~~powershell\nC get nodes\nC get csr\n$csr = 'PASTE_CSR_NAME'\nC get csr $csr -o yaml\n~~~\n\nOnly inspect an actual CSR. Record which connection failed, the requesting identity, signer, usages, validity dates, SANs, and trust chain.\n\nOn a kubeadm control-plane host, its administrator may inspect:\n\n~~~console\nkubeadm certs check-expiration\n~~~\n\nThis is not a command to run on the Windows workstation or an arbitrary managed control plane. Use the provider's equivalent evidence when kubeadm does not own certificates.",
+    "verify": "Recovery needs successful authenticated communication, appropriate certificate identity/trust, fresh node status, and stable workloads. A new file on disk or an approved CSR alone does not establish the component reloaded it.",
+    "cleanup": "All shown operations inspect state. Renewal/approval/restart requires the platform's established procedure and preservation of keys/configuration for recovery; do not restore an expired credential as the final fix.",
+    "sources": "[kubeadm certificate management](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/), [Kubelet certificate rotation](https://kubernetes.io/docs/tasks/tls/certificate-rotation/), [Certificate signing requests](https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/)"
+  },
+  {
+    "n": 104,
+    "slug": "pdb-drain",
+    "title": "Node drain disrupts workloads despite a PDB",
+    "pages": "51",
+    "mode": "Dry-run eviction experiment",
+    "summary": [
+      "A PDB constrains supported eviction requests for Pods selected by its labels.",
+      "Direct Pod deletion, controller scale-down, and involuntary outages are outside that protection.",
+      "kubectl drain --force permits unmanaged Pods; it is not the flag that bypasses PDB checks.",
+      "Replacement capacity and healthy placement are necessary alongside a valid budget."
+    ],
+    "cue": "Selected Pod, healthy budget, eviction API.",
+    "plain": "Maya's rule limits how many counters may close voluntarily. It cannot prevent a building outage or someone bypassing the closure request process.",
+    "story": "Two disposable catalog workers are protected by a strict budget. Server-dry-run eviction is denied until a one-replica disruption is allowed; no node is actually drained.",
+    "detail": "Inspect the PDB selector, expectedPods, currentHealthy, desiredHealthy, disruptionsAllowed, observedGeneration, and workload placement. Budget calculations lag controller updates, so wait for current status. A single-node cluster may have no replacement destination even if a budget allows an eviction.\n\nThe source incorrectly says drain --force itself bypasses PDBs. --disable-eviction forces the direct-delete path and bypasses budget checks; direct kubectl delete also bypasses them. UnhealthyPodEvictionPolicy affects handling of unready Pods and must match availability requirements. Do not weaken a budget just to make a real drain finish.",
+    "guide": "[Workers](manifests/10-workers.yaml) have two replicas and selector §app: q104-workers§. [Strict PDB](faults/20-pdb.yaml) sets minAvailable=2. [Permissive PDB](fixed/20-pdb.yaml) sets minAvailable=1. Both use policy/v1. The runbook sends a policy/v1 Eviction to the Pod subresource with §dryRun=All§, including a UID precondition.",
+    "prereq": "Capacity for two extra small Pods; permission for PDBs and the pods/eviction subresource. No node maintenance permission is needed.",
+    "run": "~~~powershell\nK apply -f topics/%TOPIC%/manifests/\nK rollout status deployment/q104-workers --timeout=120s\nK apply -f topics/%TOPIC%/faults/\nK get pdb q104-budget -o yaml\n~~~\n\nWait until status observes this generation and disruptionsAllowed=0, then prepare the dry-run request:\n\n~~~powershell\n$pod = (K get pods -l app=q104-workers -o json | ConvertFrom-Json).items[0]\n$request = @{apiVersion='policy/v1'; kind='Eviction'; metadata=@{name=$pod.metadata.name; namespace=$ns}; deleteOptions=@{preconditions=@{uid=$pod.metadata.uid}}} | ConvertTo-Json -Depth 8\n$url = \"/api/v1/namespaces/$ns/pods/$($pod.metadata.name)/eviction?dryRun=All\"\n$request | C create --raw $url -f -\n~~~\n\nExpect budget rejection. Update the PDB and wait for disruptionsAllowed=1:\n\n~~~powershell\nK apply -f topics/%TOPIC%/fixed/\nK get pdb q104-budget -o yaml\n$request | C create --raw $url -f -\nK get pods -l app=q104-workers\n~~~",
+    "verify": "The same proposed eviction is denied under minAvailable=2 and accepted as a dry-run under minAvailable=1. Both Pod UIDs remain because neither request persists deletion. This validates the budget behavior, not real node drain or replica spreading.",
+    "cleanup": "~~~powershell\nK delete pdb q104-budget --ignore-not-found\nK delete deployment q104-workers --ignore-not-found\n~~~\n\nNo cordon/uncordon is needed; no node was changed.",
+    "sources": "[kubectl drain flags](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_drain/), [Disruptions](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/), [API-initiated eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/)"
+  },
+  {
+    "n": 105,
+    "slug": "api-overload",
+    "title": "API server overloaded: slow kubectl and timeouts",
+    "pages": "51-52",
+    "mode": "Read-only control-plane investigation",
+    "summary": [
+      "Slow requests can arise in the API server, admission, datastore, or network.",
+      "Measure latency and errors by operation/resource before blaming object count alone.",
+      "Noisy clients should use efficient watches, bounded retries, and scoped lists.",
+      "API Priority and Fairness allocates request capacity but cannot fix slow storage."
+    ],
+    "cue": "Locate the queue, then identify its producer.",
+    "plain": "Head office has a long queue. The bottleneck might be the receptionist, a required reviewer, or the archive; hiring another receptionist alone may not help.",
+    "story": "Maya samples one small catalog read with a timeout and compares it with an administrator dashboard. The exercise does not stress the API or enumerate all Pods repeatedly.",
+    "detail": "Distinguish connection/TLS delays, server 429 throttling, client-side rate limiting, webhook latency, and etcd commit/read latency. Correlate apiserver request duration/counts, APF queues, admission metrics, etcd disk latency, and controller workqueue backlog. Relevant metric availability depends on version and access.\n\nA runaway reconciler's retry/list loop can create high churn even with modest steady object counts. Pagination bounds responses but does not make an endless repeated full scan cheap. APF is normally already present on modern clusters; verify effective flow schemas and priority levels rather than blindly enabling or retuning it.",
+    "guide": "The base namespace is a small unit for a scoped read. Record request verb, resource, selector, timeout, duration, and timestamp. No API server tuning or load generator is provided. The [scale lesson](../../../06-bookshop-reliability/topics/68-large-clusters/lesson.md) separates control-plane demand from worker utilization.",
+    "prereq": "Namespace reads and optional platform metrics/audit access. A healthy baseline does not reproduce an overload. Do not grant metrics or audit permissions merely to run the lesson.",
+    "run": "~~~powershell\nGet-Date -Format o\nMeasure-Command { K get deployment %APP% --request-timeout=5s }\nC get --raw=/readyz --request-timeout=5s\nK get events --sort-by=.metadata.creationTimestamp --request-timeout=5s\n~~~\n\n## Trace one slow request\n\nRecord client versus server delay, response/error code, matching admission/audit evidence, and datastore latency. Identify the highest-volume caller through existing telemetry. Propose a bounded pause/rate-limit or client fix owned by that controller's operator.",
+    "verify": "A real mitigation should improve request latency/error rate, reduce queues, and let controllers catch up without starving critical requests. One fast kubectl call or a healthy readyz is insufficient evidence of sustained recovery.",
+    "cleanup": "The sample creates no objects. Any later tuning or client pause needs a documented restoration plan and observation of both critical and ordinary API traffic.",
+    "sources": "[API Priority and Fairness](https://kubernetes.io/docs/concepts/cluster-administration/flow-control/), [System component metrics](https://kubernetes.io/docs/concepts/cluster-administration/system-metrics/)"
+  }
+]

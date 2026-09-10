@@ -1,4 +1,4 @@
-# Blue-green and canary releases
+# 43. Blue-green and canary releases
 
 ## Concise technical summary
 

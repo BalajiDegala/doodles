@@ -1,4 +1,4 @@
-# Networking and CNI plugins: runbook
+# 45. Networking and CNI plugins: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

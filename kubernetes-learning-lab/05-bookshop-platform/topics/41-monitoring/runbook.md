@@ -1,4 +1,4 @@
-# Kubernetes monitoring: runbook
+# 41. Kubernetes monitoring: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

@@ -1,4 +1,4 @@
-# Garbage collection and ownership
+# 80. Garbage collection and ownership
 
 ## Concise technical summary
 

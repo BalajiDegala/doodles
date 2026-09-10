@@ -1,4 +1,4 @@
-# Secret encryption at rest
+# 77. Secret encryption at rest
 
 ## Concise technical summary
 

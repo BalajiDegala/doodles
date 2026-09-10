@@ -1,4 +1,4 @@
-# Security hardening and kube-bench
+# 62. Security hardening and kube-bench
 
 ## Concise technical summary
 

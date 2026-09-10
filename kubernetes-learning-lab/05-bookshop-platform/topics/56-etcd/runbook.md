@@ -1,4 +1,4 @@
-# etcd and cluster state: runbook
+# 56. etcd and cluster state: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

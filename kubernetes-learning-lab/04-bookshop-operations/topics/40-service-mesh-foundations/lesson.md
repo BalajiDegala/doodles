@@ -1,4 +1,4 @@
-# Service mesh foundations
+# 40. Service mesh foundations
 
 ## Concise technical summary
 

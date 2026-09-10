@@ -3,7 +3,7 @@
 ## Concise technical summary
 
 1. A standard init container completes setup before application containers start.
-2. If there are several, they run one after another.
+2. If there are several, Kubernetes runs them one after another.
 3. Our init container prepares the bookshop page in a shared volume.
 4. The setup must be safe to repeat when a replacement Pod starts.
 

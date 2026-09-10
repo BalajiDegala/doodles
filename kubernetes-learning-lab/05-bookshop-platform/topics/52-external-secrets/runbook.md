@@ -1,4 +1,4 @@
-# External Secrets Operator: runbook
+# 52. External Secrets Operator: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

@@ -1,4 +1,4 @@
-# Disaster recovery: runbook
+# 65. Disaster recovery: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

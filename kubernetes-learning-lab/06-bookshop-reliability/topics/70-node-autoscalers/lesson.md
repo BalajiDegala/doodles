@@ -1,4 +1,4 @@
-# Karpenter and Cluster Autoscaler
+# 70. Karpenter and Cluster Autoscaler
 
 ## Concise technical summary
 

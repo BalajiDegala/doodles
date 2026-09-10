@@ -1,4 +1,4 @@
-# CoreDNS customization: reading the manifests
+# 54. CoreDNS customization: reading the manifests
 
 Reference: [Corefile](reference/Corefile). It is CoreDNS server configuration, not YAML.
 

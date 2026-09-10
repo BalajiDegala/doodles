@@ -1,0 +1,117 @@
+[
+  {
+    "n": 86,
+    "slug": "service-routing",
+    "title": "Service not routing traffic to Pods",
+    "pages": "41",
+    "mode": "Fault and repair",
+    "summary": [
+      "A Service needs matching Pods and usable EndpointSlices.",
+      "Readiness, selectors, and targetPort describe separate routing requirements.",
+      "Test Pod and Service paths independently to locate the failing layer.",
+      "Restore the selector or port and verify an application response through the Service."
+    ],
+    "cue": "Selector, readiness, port, then packet path.",
+    "plain": "The directory sends customers to the wrong counter label. Even healthy staff cannot serve a customer whose directions never reach them.",
+    "story": "A second Service intentionally selects no catalog Pods. Its repair points at the existing healthy catalog, so no worker is restarted.",
+    "detail": "An empty EndpointSlice or absent endpoints suggests no matching destinations. A slice may include unready or terminating destinations: read conditions.ready, serving, and terminating rather than counting addresses. DNS resolving a ClusterIP does not prove the Service has a usable backend.\n\nIf PodIP:8080 works but ServiceIP:80 fails, inspect service forwarding, policies, and port mapping. Some CNIs implement Service routing without kube-proxy. Use EndpointSlices; legacy Endpoints is deprecated from Kubernetes 1.33. Port-forwarding bypasses important portions of the Service data path.",
+    "guide": "[Fault Service](faults/10-service.yaml) selects §app: q86-missing§. [Fixed Service](fixed/10-service.yaml) selects §app: incident-catalog§. Both use frontend 80 and backend 8080. Applying the fixed manifest updates only §q86-route§.",
+    "prereq": "Healthy base and permission for Service creation/update, EndpointSlice reads, and exec into the catalog.",
+    "run": "~~~powershell\nK apply -f topics/%TOPIC%/faults/\nK get service q86-route -o yaml\nK get pods -l app=q86-missing\nK get endpointslices -l kubernetes.io/service-name=q86-route -o yaml\nK exec deployment/%APP% -- wget -T 3 -qO- http://q86-route\n~~~\n\nThe request should fail with a nonzero exit. Repair and retry after endpoints propagate:\n\n~~~powershell\nK apply -f topics/%TOPIC%/fixed/\nK get endpointslices -l kubernetes.io/service-name=q86-route -o yaml\nK exec deployment/%APP% -- wget -T 3 -qO- http://q86-route\n~~~",
+    "verify": "Before repair, no ready endpoint matches the selector. Afterward, ready catalog addresses appear and the request returns HTML. If addresses are present but requests still fail, compare targetPort, readiness and NetworkPolicy.",
+    "cleanup": "~~~powershell\nK delete service q86-route --ignore-not-found\n~~~\n\nThe original catalog Service is separate and remains usable.",
+    "sources": "[Debug Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/), [EndpointSlices](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/)"
+  },
+  {
+    "n": 87,
+    "slug": "rollout-stuck",
+    "title": "Deployment rollout stuck",
+    "pages": "41-42",
+    "mode": "Fault and repair",
+    "summary": [
+      "A rollout can stall because new replicas are unready or cannot be placed.",
+      "maxSurge needs spare capacity and maxUnavailable limits rollout availability loss.",
+      "A PDB does not control the Deployment controller's rolling replacement.",
+      "Inspect the new ReplicaSet, repair its template, and verify rollout completion."
+    ],
+    "cue": "Which new replica cannot become available, and why?",
+    "plain": "Maya keeps the old counter open until the replacement passes inspection. The renovation stalls because the replacement's inspection instruction is wrong.",
+    "story": "A separate Deployment first serves normally, then receives an impossible readiness path. The old replica stays available until the fixed template is reapplied.",
+    "detail": "With one replica, maxUnavailable=0 and maxSurge=1, the controller can keep one old Pod while the new Pod remains unready. Capacity must fit the surge. A progress deadline reports failed progress; it does not automatically roll back.\n\nThe PDF incorrectly attributes Deployment rollout blocking to a PDB. PDBs constrain supported eviction requests, not a Deployment controller deleting Pods during its rollout. Read ReplicaSet events for admission/quota failures that may prevent new Pods from appearing. A rollback also cannot reverse database side effects.",
+    "guide": "[Healthy template](fixed/10-worker.yaml) probes §/§. [Fault template](faults/10-worker.yaml) probes §/q87-never-ready§. Both address §q87-worker§ with maxSurge=1/maxUnavailable=0 and a 60-second progress deadline. The server still works; the bad probe keeps it out of readiness.",
+    "prereq": "Enough space for two small exercise Pods during surge, plus the base. Deployments, ReplicaSets, events, and exec permissions.",
+    "run": "~~~powershell\nK apply -f topics/%TOPIC%/fixed/\nK rollout status deployment/q87-worker --timeout=120s\nK apply -f topics/%TOPIC%/faults/\nK rollout status deployment/q87-worker --timeout=20s\n~~~\n\nThe short rollout wait is expected to fail. Investigate without deleting Pods:\n\n~~~powershell\nK get deployment q87-worker -o yaml\nK get rs,pods -l app=q87-worker\nK describe pods -l app=q87-worker\nK apply -f topics/%TOPIC%/fixed/\nK rollout status deployment/q87-worker --timeout=120s\nK exec deployment/q87-worker -- wget -T 3 -qO- http://localhost:8080\n~~~",
+    "verify": "Observe a ready old replica and an unready new one, plus HTTP probe failure evidence. After repair, all desired replicas use the healthy template and serve HTML. If admission or capacity prevents surge, record that different blocker.",
+    "cleanup": "Reapplying the known-good file is the explicit recovery here. For real releases, inspect rollout history and choose a reviewed revision. Finish:\n\n~~~powershell\nK delete deployment q87-worker --ignore-not-found\n~~~",
+    "sources": "[Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/), [Disruption budgets](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/)"
+  },
+  {
+    "n": 88,
+    "slug": "pvc-pending",
+    "title": "PVC stuck in Pending",
+    "pages": "42",
+    "mode": "Bounded storage investigation",
+    "summary": [
+      "Pending means the claim has not bound to a suitable volume.",
+      "StorageClass existence, provisioner health, size, access mode, and topology affect binding.",
+      "WaitForFirstConsumer can intentionally defer provisioning until a consuming Pod is scheduled.",
+      "Investigate events before replacing a claim or altering stored data."
+    ],
+    "cue": "Class, consumer, provisioner, topology.",
+    "plain": "Maya has requested a storage locker, but a request slip is not a locker assignment. The provider may be waiting to learn which branch needs it.",
+    "story": "A tiny disposable claim requests a deliberately nonexistent StorageClass. It demonstrates evidence gathering without allocating a cloud disk.",
+    "detail": "For static volumes, compare capacity, access modes, volumeMode, class, selectors, and claim reservation. For dynamic provisioning, inspect CSI/controller events, provider permissions/quotas, and available topology. A PVC selector can prevent dynamic provisioning on implementations where it is unsupported.\n\nWaitForFirstConsumer is not inherently broken, and setting a Pod nodeName directly bypasses the scheduler path needed for delayed binding. PV/PVC binding does not prove an application has mounted the correct dataset. Deleting a bound claim can trigger storage deletion through reclaim policy; do not use deletion as a generic fix.",
+    "guide": "[Claim](faults/10-claim.yaml) asks for 1Mi, ReadWriteOnce, and class §bookshop-q88-missing§. There is no matching StorageClass or consumer. The runbook deletes only this still-unbound claim after confirming that no volume was allocated.",
+    "prereq": "PVC create/delete and StorageClass read permission. Confirm the intentionally missing class is absent. Do not substitute a real provider class merely to make the demonstration pass.",
+    "run": "~~~powershell\nC get storageclass bookshop-q88-missing\nK apply -f topics/%TOPIC%/faults/\nK get pvc q88-claim\nK describe pvc q88-claim\nK get events --field-selector involvedObject.name=q88-claim --sort-by=.metadata.creationTimestamp\n~~~\n\nExpect NotFound for the class, then a Pending claim. Allow the controller time to emit the storage-class error.\n\n## Choose a real repair on paper\n\nFor an actual incident, inspect the named class and its provisioner/bindingMode. Decide whether the workload should use a supported class, a waiting consumer, or a repaired provider. Reusing a claim with data needs a storage-owner plan; this lab does not mutate one.",
+    "verify": "The claim remains Pending with no spec.volumeName and class-related evidence. If it binds unexpectedly, stop and inspect the allocated PV and reclaim policy before cleanup. A healthy storage demonstration is available in question 33.",
+    "cleanup": "Only after confirming this claim is still unbound:\n\n~~~powershell\nK delete pvc q88-claim --ignore-not-found\n~~~",
+    "sources": "[Persistent volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/), [StorageClass binding modes](https://kubernetes.io/docs/concepts/storage/storage-classes/#volume-binding-mode)"
+  },
+  {
+    "n": 89,
+    "slug": "oomkilled",
+    "title": "OOMKilled while application memory appears normal",
+    "pages": "42-43",
+    "mode": "Read-only investigation",
+    "summary": [
+      "Container memory includes more than an application heap.",
+      "OOMKilled status is stronger evidence than exit code 137 alone.",
+      "Current metrics can miss the peak that killed a previous container.",
+      "Size from measured total demand and investigate leaks before increasing limits."
+    ],
+    "cue": "Account for the container, not only the heap.",
+    "plain": "The stock ledger counts books but ignores shelves, packing material, and staff space. The room can overflow even while the book count seems reasonable.",
+    "story": "Maya compares the catalog's container limit with observed memory and reads status evidence. The exercise does not intentionally exhaust the practice node.",
+    "detail": "Native allocations, thread stacks, subprocesses, memory-backed volumes, and charged cache can contribute to the cgroup total. A runtime's own heap metric may cover only one component. Node OOM and container-limit OOM need different capacity analysis.\n\nInspect lastState.terminated.reason, events, and retained monitoring around the timestamp. A single §kubectl top§ sample after restart misses the failed container's peak. There is no universally correct heap percentage or limit multiplier: runtime, workload, off-heap demand, and service latency determine headroom. Larger limits may defer a leak and increase node risk.",
+    "guide": "The base Deployment declares a 32Mi request and 64Mi limit per server. The request participates in scheduling; the limit constrains memory use. Inspect live containerStatuses and initContainerStatuses alongside the template. No memory-exhaustion manifest is supplied.",
+    "prereq": "Read access to Pods and Deployments. Metrics-server and historical memory monitoring are optional; missing history leaves the peak-demand conclusion unresolved.",
+    "run": "~~~powershell\nK get pods -l app=%APP% -o json\nK get deployment %APP% -o yaml\nK top pods -l app=%APP% --containers\n~~~\n\n## Inspect an affected container when one exists\n\n~~~powershell\n$p = 'PASTE_AFFECTED_POD'\n$c = 'PASTE_CONTAINER_NAME'\nK describe pod $p\nK logs $p -c $c --previous --tail=100\n~~~\n\nUse observed names only. Record failure timestamp, last reason, exit code, restart count, memory limit, and historical usage. Ask the platform owner for cgroup/kernel evidence if reason is ambiguous.",
+    "verify": "Healthy catalog status proves only a baseline. A real OOM finding requires matching failure evidence and memory history; after repair, monitor a representative peak period for stable restarts and service latency. Do not label every 137 exit OOMKilled.",
+    "cleanup": "All commands are read-only. A future sizing change belongs in the workload's managed configuration with a measured rollback trigger and capacity check.",
+    "sources": "[Assign memory resources](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/), [Resource management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)"
+  },
+  {
+    "n": 90,
+    "slug": "rolling-503",
+    "title": "Intermittent 503 errors during rolling updates",
+    "pages": "43",
+    "mode": "Read-only investigation and reusable drill",
+    "summary": [
+      "Termination and endpoint updates propagate through different components.",
+      "The application must handle TERM and finish accepted work within its grace period.",
+      "Readiness and routing health determine which replicas receive new traffic.",
+      "A preStop delay can help propagation but cannot guarantee zero failed requests."
+    ],
+    "cue": "Stop new work, drain accepted work, then exit.",
+    "plain": "A counter is closing while customers still follow an older direction sign. Staff need time to finish current orders and let the updated directions spread.",
+    "story": "Maya correlates catalog rollout times, ready endpoints, and request errors. The existing lifecycle lab supplies a contained hook/signal exercise; production traffic is not disrupted.",
+    "detail": "The termination grace countdown includes preStop time. A long hook can leave too little time for application drain before forced termination. EndpointSlices expose ready/serving/terminating; routing implementations handle draining differently. Keep sufficient ready capacity during startup and shutdown.\n\nA fixed five- or ten-second sleep is a heuristic, not a guarantee. Test keep-alive connections, load balancer deregistration, longest requests, timeout/retry policy, and application signal handling together. BusyBox httpd is a teaching server, not proof of production-grade request draining. Not every 503 is a shutdown race: unready backends and admission/capacity failures can produce gaps.",
+    "guide": "Read the base Deployment's readiness probe, rollout surge/unavailability settings, and Pod grace period. Compare them with the [lifecycle-hook manifest guide](../../../04-bookshop-operations/topics/39-lifecycle-hooks/manifest-guide.md). That exercise shows preStop/TERM observations, while end-to-end traffic draining requires the actual server and routing stack.",
+    "prereq": "Healthy catalog, Pod/EndpointSlice reads, and optional ingress request logs with timestamps. Run the earlier lifecycle drill using its own setup and namespace.",
+    "run": "~~~powershell\nK get deployment %APP% -o yaml\nK get pods -l app=%APP% -o wide\nK get endpointslices -l kubernetes.io/service-name=%APP% -o yaml\nK get events --sort-by=.metadata.creationTimestamp\n~~~\n\n## Correlate an incident\n\nBuild a timeline of rollout start, Pod deletionTimestamp, readiness loss, endpoint changes, TERM receipt, application exit, and failed request times. Identify the slowest propagation or drain step.\n\nFor contained signal practice, follow the [question 39 runbook](../../../04-bookshop-operations/topics/39-lifecycle-hooks/runbook.md), then return here and state which ingress/connection behavior it does not test.",
+    "verify": "Recovery evidence must include request success/error/latency across a representative rollout through the real entry point. Pod readiness alone and a backend port-forward are incomplete. A timing change without a repeatable traffic test is still a hypothesis.",
+    "cleanup": "The inspection changes nothing. Clean up the reused lifecycle lab with its own commands. A production hook/timeout change should have a reviewed template rollback; it cannot undo already interrupted requests.",
+    "sources": "[Pod termination flow](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination), [Container lifecycle hooks](https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/)"
+  }
+]

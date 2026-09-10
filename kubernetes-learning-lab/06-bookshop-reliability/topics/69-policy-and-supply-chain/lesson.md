@@ -1,4 +1,4 @@
-# Kyverno, Gatekeeper, and supply-chain policy
+# 69. Kyverno, Gatekeeper, and supply-chain policy
 
 ## Concise technical summary
 

@@ -1,4 +1,4 @@
-# Centralized logging: reading the manifests
+# 42. Centralized logging: reading the manifests
 
 File: [catalog log Job](manifests/10-log-job.yaml).
 

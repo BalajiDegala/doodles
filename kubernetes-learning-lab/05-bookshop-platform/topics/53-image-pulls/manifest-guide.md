@@ -1,4 +1,4 @@
-# Image pulls and registry authentication: reading the manifests
+# 53. Image pulls and registry authentication: reading the manifests
 
 Files: [cached worker](manifests/pull-cached.yaml) and [registry-resolving worker](manifests/pull-resolve.yaml).
 

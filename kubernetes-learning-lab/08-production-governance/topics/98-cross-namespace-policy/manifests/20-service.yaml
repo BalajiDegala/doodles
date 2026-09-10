@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: q98-route
+  namespace: k8s-learning-governance
+spec:
+  selector:
+    app: q98-server
+  ports:
+    - port: 80
+      targetPort: 8080

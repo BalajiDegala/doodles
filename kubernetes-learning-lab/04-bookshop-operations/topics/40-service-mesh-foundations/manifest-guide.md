@@ -1,4 +1,4 @@
-# Service mesh foundations: reading the existing manifests
+# 40. Service mesh foundations: reading the existing manifests
 
 This concept-and-observation topic adds no YAML. Start with the shared [Deployment](../../manifests/20-deployment.yaml), [Service](../../manifests/30-service.yaml), and [namespace](../../manifests/00-namespace.yaml).
 

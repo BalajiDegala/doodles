@@ -1,0 +1,28 @@
+[
+  {
+    "status": "passed",
+    "evidence": [
+      "PID   USER     TIME  COMMAND",
+      "    1 1000      0:00 sleep 3600",
+      "    7 1000      0:00 sh -c ps; cat /etc/resolv.conf",
+      "   13 1000      0:00 ps",
+      "nameserver 10.43.0.10",
+      "search k8s-learning-platform.svc.cluster.local svc.cluster.local cluster.local",
+      "options ndots:5"
+    ],
+    "name": "Q47 exact PowerShell completion wait and logs"
+  },
+  {
+    "status": "passed",
+    "evidence": {
+      "name": "v1",
+      "served": true,
+      "storage": true
+    },
+    "name": "Q58 CRD served and storage discovery"
+  },
+  {
+    "name": "Cleanup Q47 namespace",
+    "status": "passed"
+  }
+]

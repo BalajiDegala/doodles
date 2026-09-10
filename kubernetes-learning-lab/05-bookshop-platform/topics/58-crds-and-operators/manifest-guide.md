@@ -1,4 +1,4 @@
-# CRDs and Operators: reading the manifests
+# 58. CRDs and Operators: reading the manifests
 
 Optional concrete references are the [Certificate](../50-certificates-and-tls/optional/20-certificate.yaml) and its [walkthrough](../50-certificates-and-tls/manifest-guide.md).
 

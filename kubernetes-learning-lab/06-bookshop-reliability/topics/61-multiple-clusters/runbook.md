@@ -1,4 +1,4 @@
-# Multi-cluster strategies: runbook
+# 61. Multi-cluster strategies: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

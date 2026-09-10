@@ -1,4 +1,4 @@
-# Multi-cluster strategies
+# 61. Multi-cluster strategies
 
 ## Concise technical summary
 

@@ -1,4 +1,4 @@
-# Garbage collection and ownership: reading the manifests
+# 80. Garbage collection and ownership: reading the manifests
 
 File: [disposable Deployment](manifests/10-disposable-deployment.yaml). It has one replica, unique `app: disposable-counter` selectors, and the shared read-only catalog page. Generated ReplicaSets/Pods receive controller ownership references; the authored Deployment does not hardcode their generated names or UIDs.
 

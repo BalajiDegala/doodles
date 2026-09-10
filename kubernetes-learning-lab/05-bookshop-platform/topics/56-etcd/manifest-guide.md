@@ -1,4 +1,4 @@
-# etcd and cluster state: reading the manifests
+# 56. etcd and cluster state: reading the manifests
 
 Read the [page ConfigMap](../../manifests/10-page.yaml) and [Deployment](../../manifests/20-deployment.yaml). They declare API state that the control plane persists. Live `metadata.uid` identifies an object incarnation and `resourceVersion` supports API concurrency/watch semantics; neither is an application backup.
 

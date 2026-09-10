@@ -1,4 +1,4 @@
-# Gateway API and Ingress: runbook
+# 67. Gateway API and Ingress: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

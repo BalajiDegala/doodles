@@ -1,4 +1,4 @@
-# Karpenter and Cluster Autoscaler: runbook
+# 70. Karpenter and Cluster Autoscaler: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

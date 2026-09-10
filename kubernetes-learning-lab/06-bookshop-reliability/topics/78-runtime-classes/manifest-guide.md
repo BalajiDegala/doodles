@@ -1,4 +1,4 @@
-# RuntimeClass and sandboxing: reading the manifests
+# 78. RuntimeClass and sandboxing: reading the manifests
 
 Read the [base Deployment](../../manifests/20-deployment.yaml). It omits `runtimeClassName` and therefore uses the platform’s default runtime handling. This differs from explicitly selecting a configured class.
 

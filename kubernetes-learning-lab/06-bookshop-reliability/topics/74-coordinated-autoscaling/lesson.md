@@ -1,4 +1,4 @@
-# HPA, VPA, and KEDA
+# 74. HPA, VPA, and KEDA
 
 ## Concise technical summary
 

@@ -1,0 +1,117 @@
+[
+  {
+    "n": 106,
+    "slug": "external-dns",
+    "title": "Pod resolves internal DNS but not external DNS",
+    "pages": "52",
+    "mode": "Bounded DNS observation",
+    "summary": [
+      "Internal and external names can take different CoreDNS paths.",
+      "A working cluster name does not prove upstream forwarding or internet egress works.",
+      "Inspect the Pod resolver, CoreDNS forwarders, policies, and node resolver in order.",
+      "Compare an absolute external query with an internal control query."
+    ],
+    "cue": "Cluster answer works; where does forwarding stop?",
+    "plain": "The branch directory knows its own counters, but outside suppliers require another directory. A broken forwarding link affects only outside names.",
+    "story": "A disposable reader compares the catalog's absolute name with example.com. External access is a declared dependency; an offline cluster should record it as unavailable.",
+    "detail": "Read the Pod's resolver and cluster DNS configuration before testing. Cluster DNS may resolve internal Service records locally while forwarding external queries. Verify source egress to DNS over UDP/TCP 53, DNS-server access to its upstreams, and node-level resolver/firewall health. DNS-over-TLS/HTTPS requires its configured transports instead.\n\nAn external query returning NXDOMAIN differs from a timeout; neither necessarily means CoreDNS is overloaded. Do not replace corporate upstreams with a public resolver without understanding network/privacy requirements. A host-network or custom-dnsPolicy Pod can follow a different path than the ordinary catalog.",
+    "guide": "[Reader](manifests/10-reader.yaml) uses the cluster's default Pod DNS setup. The runbook inspects configuration, queries names, and identifies the forwarding boundary. It does not patch CoreDNS or node resolv.conf.",
+    "prereq": "Healthy base, DNS reader/exec permissions, and optional permitted external DNS resolution. CoreDNS configuration reads require kube-system access.",
+    "run": "~~~powershell\nK apply -f topics/%TOPIC%/manifests/\nK wait --for=condition=Ready pod/q106-reader --timeout=120s\nK exec q106-reader -- cat /etc/resolv.conf\n$domain = 'cluster.local'\n$internalName = \"%APP%.$ns.svc.$domain.\"\nK exec q106-reader -- nslookup $internalName\nK exec q106-reader -- nslookup example.com.\nC -n kube-system get configmap coredns -o yaml\nK get networkpolicy\n~~~\n\nSet domain from the actual resolver search list. coredns is a common ConfigMap name, not universal: use the provider's named DNS configuration if different. Compare the two queries and forwarder settings with node/upstream evidence from the platform owner.",
+    "verify": "The internal query should return the catalog Service address. An external answer demonstrates forwarding for this query; it does not prove HTTP egress works. If the cluster intentionally blocks external DNS, record the design constraint rather than weakening policy.",
+    "cleanup": "~~~powershell\nK delete pod q106-reader --ignore-not-found\n~~~\n\nNo DNS server, policy, or host setting was changed.",
+    "sources": "[Customize DNS service](https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/), [Debug DNS](https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/)"
+  },
+  {
+    "n": 107,
+    "slug": "helm-pending-upgrade",
+    "title": "Helm release stuck in pending-upgrade",
+    "pages": "52-53",
+    "mode": "Optional Helm recovery rehearsal",
+    "summary": [
+      "A pending release can reflect an active or interrupted Helm operation.",
+      "Check the deployment pipeline and release history before starting another writer.",
+      "A known-good revision may restore workload configuration through rollback.",
+      "Deleting Helm release Secrets can lose state and is not a routine unlock procedure."
+    ],
+    "cue": "One writer, known history, verified rollback.",
+    "plain": "A stock transfer is marked in progress after the clerk's connection disappears. First determine whether the clerk is still working before starting a second transfer.",
+    "story": "A new local-chart release in the lab namespace is installed, upgraded, and rolled back. The exercise rehearses recovery mechanics without manufacturing a stuck release Secret.",
+    "detail": "Inspect helm status/history and the CI job that owns the operation. If it is still active, follow its cancellation/completion procedure. For an abandoned operation, choose a compatible successful revision and check hooks, values, CRDs, storage, and application migrations before rollback. Helm rollback does not reverse external side effects or database schema changes.\n\nManual deletion of release metadata or uninstall/reinstall can remove history or workloads; use a version-matched recovery procedure only after investigating why normal rollback failed. Helm major versions differ: Helm 3 commonly uses --atomic, while Helm 4 documents --rollback-on-failure. Check the installed help instead of copying flags across versions.",
+    "guide": "Reuse the [local chart](../../../04-bookshop-operations/topics/32-helm-packaging/chart/Chart.yaml), [base values](../../../04-bookshop-operations/topics/32-helm-packaging/chart/values.yaml), and [evening values](../../../04-bookshop-operations/topics/32-helm-packaging/values-evening.yaml). It contains only the teaching catalog and a test hook. Release §q107-desk§ is separate from the chapter base; revision 1 is known-good because this runbook creates it.",
+    "prereq": "Installed Helm and compatible kubectl, permission for the chart resources/release storage, a fresh release name, and capacity for the chart's evening replica count. Missing Helm permits file review only.",
+    "run": "~~~powershell\nhelm version --short\nhelm upgrade --help\nhelm --kube-context $ctx -n $ns list --all --filter '^q107-desk$'\n$chart = '../04-bookshop-operations/topics/32-helm-packaging/chart'\n$evening = '../04-bookshop-operations/topics/32-helm-packaging/values-evening.yaml'\nhelm lint $chart --strict\n~~~\n\nThe release list must be empty before creating this rehearsal:\n\n~~~powershell\nhelm --kube-context $ctx -n $ns install q107-desk $chart --wait --timeout 120s\nhelm --kube-context $ctx -n $ns upgrade q107-desk $chart -f $evening --wait --timeout 120s\nhelm --kube-context $ctx -n $ns history q107-desk\nhelm --kube-context $ctx -n $ns rollback q107-desk 1 --wait --timeout 120s\nhelm --kube-context $ctx -n $ns test q107-desk --logs --timeout 120s\nhelm --kube-context $ctx -n $ns history q107-desk\n~~~\n\nFor a real pending release, replace neither the name nor revision blindly: first identify its active writer and known-good history.",
+    "verify": "The final deployed revision should be a new rollback revision using revision 1's configuration, and the chart test must pass its response check. This proves normal rollback mechanics, not recovery of corrupted release metadata.",
+    "cleanup": "~~~powershell\nhelm --kube-context $ctx -n $ns uninstall q107-desk --wait --timeout 120s\nK delete pod q107-desk-page-test --ignore-not-found\n~~~\n\nRemove retained test-hook Pods only for this release. No real pending release is modified.",
+    "sources": "[Helm rollback](https://helm.sh/docs/helm/helm_rollback/), [Helm upgrade flags](https://helm.sh/docs/helm/helm_upgrade/)"
+  },
+  {
+    "n": 108,
+    "slug": "wrong-pv-data",
+    "title": "Production accidentally mounts staging PV data",
+    "pages": "53",
+    "mode": "Read-only data-provenance investigation",
+    "summary": [
+      "A bound volume can contain the wrong dataset despite valid Kubernetes status.",
+      "Trace PVC, PV, storage handle, claim UID, and application data provenance.",
+      "Released Retain volumes are not automatically clean or safely reusable.",
+      "Contain writes and restore the correct data through a storage-owner plan."
+    ],
+    "cue": "Bound is not proof of the right books.",
+    "plain": "Maya receives a locker key that works, but the locker contains another branch's stock. A functioning lock does not establish ownership of the contents.",
+    "story": "The learner traces a supplied test claim to its backend and records expected dataset identity. The lab does not bind real staging data into another environment.",
+    "detail": "Namespace separation does not make a cluster-scoped PV an environment-isolated asset. Compare claimRef namespace/name/UID, labels, volumeHandle, backup lineage, and application-level markers. Labels by themselves do not enforce binding policy.\n\nAfter a Retain claim is released, its PV normally stays Released with the old claim reference until an administrator handles reclamation. The source's accidental-rebinding scenario needs an intervening reclaim/reuse step or misconfiguration; it is not ordinary automatic reuse of any retained disk. Do not clear claimRef, erase a disk, or switch reclaimPolicy while investigating.",
+    "guide": "PVC spec.volumeName locates the PV. PV spec.claimRef identifies the intended claim, and the CSI volumeHandle identifies provider storage. storageClassName, selector, accessModes, and volumeMode affect matching; they do not prove data identity. No PV/PVC mutation manifest is supplied.",
+    "prereq": "A permitted existing test PVC and PV reads, plus storage-owner records. If no PVC exists in this chapter, inspect the earlier storage exercise using its own namespace and declared setup.",
+    "run": "~~~powershell\nK get pvc\n$claim = 'PASTE_TEST_CLAIM'\n$pvc = K get pvc $claim -o json | ConvertFrom-Json\n$volume = $pvc.spec.volumeName\nK describe pvc $claim\nC get pv $volume -o yaml\n~~~\n\nDo not proceed with an empty volume name or a failed read. Record claim UID, backend volume ID, environment owner, reclaim history, backup identity, and application dataset marker.\n\nFor a real mix-up, the workload owner first prevents further writes and isolates access according to its incident procedure. The storage owner then chooses a clean target and verified restore.",
+    "verify": "Recovery requires the correct dataset identity and consistency, restored application function, and an accounted-for wrong volume. Bound=True or successful mount alone cannot establish provenance.",
+    "cleanup": "All commands are read-only. Keep the wrong volume preserved for investigation/retention until its owner approves disposition. Do not delete it as ordinary lab cleanup.",
+    "sources": "[PV reclamation and binding](https://kubernetes.io/docs/concepts/storage/persistent-volumes/), [StorageClasses](https://kubernetes.io/docs/concepts/storage/storage-classes/)"
+  },
+  {
+    "n": 109,
+    "slug": "cronjob-accumulation",
+    "title": "CronJob accumulates thousands of completed Pods",
+    "pages": "53-54",
+    "mode": "Bounded Job cleanup drill",
+    "summary": [
+      "CronJob history limits control retained owned Jobs, not every Pod in the namespace.",
+      "TTL-after-finished can remove a completed or failed Job and its dependents.",
+      "ConcurrencyPolicy affects overlap but does not cap historical object growth.",
+      "Inspect terminal conditions and ownership before deleting old work."
+    ],
+    "cue": "Schedule limits, history limits, expiry, ownership.",
+    "plain": "Each stock report leaves a completed work ticket. Preventing overlapping shifts does not clear the growing pile of old tickets.",
+    "story": "A suspended CronJob defines a tiny report. One manually created Job completes and expires through TTL, avoiding a repeating schedule or cluster object flood.",
+    "detail": "successfulJobsHistoryLimit and failedJobsHistoryLimit apply to Jobs owned by that CronJob. ttlSecondsAfterFinished starts when a Job reaches a terminal condition. Manual jobs created with --from=cronjob copy its template but are not a proof of CronJob history-limit behavior.\n\nThe PDF's suggested status.successful=0 deletion would include active/uncompleted Jobs; it is not a reliable failed-job selector. Inspect Complete/Failed conditions and owner references. Retain useful logs outside deleted Pods when required, and suspend a runaway schedule while investigating. Suspending a CronJob does not stop Jobs already started.",
+    "guide": "[CronJob](manifests/10-cronjob.yaml) is suspended, runs a harmless echo, uses Forbid, keeps one successful/failed owned Job, sets activeDeadlineSeconds=30 and TTL=45 seconds, and uses Never/backoffLimit=0. The runbook manually creates §q109-once§ to test TTL and dependent Pod cleanup.",
+    "prereq": "Permission for CronJob/Job creation, logs, and deletion; healthy Job and TTL controllers. Observe logs promptly because the demo TTL is deliberately short.",
+    "run": "~~~powershell\nK apply -f topics/%TOPIC%/manifests/\nK create job q109-once --from=cronjob/q109-report\nK wait --for=condition=Complete job/q109-once --timeout=120s\nK logs job/q109-once\nK get job q109-once -o yaml\nK wait --for=delete job/q109-once --timeout=120s\nK get pods -l job-name=q109-once\n~~~\n\nConfirm the Job's terminal condition and TTL before it expires. If the last Pod query briefly returns a terminating Pod, wait for cascading deletion before recording success.",
+    "verify": "Expect the harmless report message, a Complete condition, then Job and Pod disappearance. The CronJob remains suspended. This verifies TTL cleanup; it does not exercise automatic schedule history pruning.",
+    "cleanup": "~~~powershell\nK delete job q109-once --ignore-not-found\nK delete cronjob q109-report --ignore-not-found\n~~~\n\nNo broad field-selector cleanup or event deletion is needed.",
+    "sources": "[CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/), [TTL-after-finished](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/), [Job conditions](https://kubernetes.io/docs/concepts/workloads/controllers/job/)"
+  },
+  {
+    "n": 110,
+    "slug": "nonroot-enforcement",
+    "title": "Container runs as root despite Pod Security enforcement",
+    "pages": "54",
+    "mode": "Controlled admission test",
+    "summary": [
+      "Pod Security enforce, warn, and audit modes have different effects.",
+      "Existing Pods are not automatically restarted into compliance when namespace policy changes.",
+      "Restricted checks declared security fields while kubelet enforces runAsNonRoot at startup.",
+      "Verify live identity and investigate exemptions, admission history, and bypass paths."
+    ],
+    "cue": "Policy mode, admission time, runtime identity.",
+    "plain": "A new no-master-key rule at the hiring desk does not automatically replace keys already issued. Inspect both the admission rule and the worker actually on duty.",
+    "story": "A fresh namespace enforces Restricted v1.33. A compliant Pod runs as UID 1000, while a root-declaring input is rejected using server-side dry-run.",
+    "detail": "Read the exact enforce label and pinned policy version. Warn and audit do not block creation. Check when the Pod was admitted, platform exemptions, all normal/init/ephemeral container contexts, and who may change namespace labels. Controllers can exist even when their generated Pods are rejected.\n\nAn image declaring USER root does not inherently bypass runAsNonRoot; kubelet should reject incompatible startup. Mutating admission runs before final validation, so simply stripping required fields is not a universal way around Restricted. A real UID 0 result requires investigation of effective settings, admission exemptions/history, privileged access, and runtime integrity. Restricted does not itself require readOnlyRootFilesystem.",
+    "guide": "[Namespace](manifests/00-namespace.yaml) is §k8s-learning-psa-review§ with enforce=restricted/enforce-version=v1.33. [Good Pod](manifests/10-good.yaml) declares UID/GID 1000, runAsNonRoot, RuntimeDefault, no escalation, and dropped capabilities. [Negative Pod](negative/10-root.yaml) requests UID 0 and runAsNonRoot=false; it is for dry-run only.",
+    "prereq": "Kubernetes supporting Restricted v1.33 rules and an enabled PodSecurity admission controller without an exemption for this test. Permission for the fresh namespace and Pod operations; Linux nodes and the teaching image.",
+    "run": "~~~powershell\nC get namespace k8s-learning-psa-review\nC apply -f topics/%TOPIC%/manifests/00-namespace.yaml\nC apply --dry-run=server -f topics/%TOPIC%/manifests/10-good.yaml\nC apply --dry-run=server -f topics/%TOPIC%/negative/10-root.yaml\n~~~\n\nThe negative dry-run must fail specifically for Restricted policy. Do not continue and claim enforcement if it succeeds.\n\n~~~powershell\nC apply -f topics/%TOPIC%/manifests/10-good.yaml\nC -n k8s-learning-psa-review wait --for=condition=Ready pod/q110-good --timeout=120s\nC -n k8s-learning-psa-review exec q110-good -- id\nC -n k8s-learning-psa-review get pod q110-good -o yaml\nC -n k8s-learning-psa-review get pod q110-root\n~~~",
+    "verify": "Expect UID 1000, non-root live fields, a specific admission rejection for the negative input, and NotFound for q110-root. This checks one path; it does not prove absence of privileged/exempt workloads elsewhere.",
+    "cleanup": "After verifying this namespace contains only the training Pod:\n\n~~~powershell\nC delete namespace k8s-learning-psa-review --timeout=120s\n~~~\n\nThe source namespace's policy was never changed; no rollback to permissive production labels is needed.",
+    "sources": "[Pod Security Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/), [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/), [Security contexts](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)"
+  }
+]

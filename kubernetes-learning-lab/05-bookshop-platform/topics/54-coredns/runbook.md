@@ -1,4 +1,4 @@
-# CoreDNS customization: runbook
+# 54. CoreDNS customization: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

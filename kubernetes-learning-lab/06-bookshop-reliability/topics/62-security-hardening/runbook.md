@@ -1,4 +1,4 @@
-# Security hardening and kube-bench: runbook
+# 62. Security hardening and kube-bench: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

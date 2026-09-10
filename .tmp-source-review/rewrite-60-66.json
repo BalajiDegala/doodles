@@ -1,0 +1,93 @@
+[
+  {
+    "n": 60,
+    "summary": [
+      "CRI is the interface kubelet uses to ask a runtime to manage containers.",
+      "containerd and CRI-O implement this interface through their runtime services.",
+      "Docker-built images can run without the old in-tree dockershim.",
+      "Runtime selection, image identity, and Pod scheduling are separate decisions."
+    ],
+    "cue": "Package the image, schedule the Pod, start it through CRI.",
+    "plain": "A supplier packs a book in a standard carton. Head office chooses a branch, and that branch's courier unpacks it. Changing the courier does not require a new kind of carton.",
+    "story": "The catalog uses BusyBox as its image. We trace that image to a live container, its Pod, and the node runtime so each layer has a concrete identity.",
+    "detail": "| Layer | Evidence | What it answers |\n| --- | --- | --- |\n| Image | image and imageID | Which tag was requested and which content was resolved? |\n| Pod | metadata.uid and spec.nodeName | Which workload instance was placed where? |\n| Container | containerID | Which runtime-managed instance started? |\n| Node | containerRuntimeVersion | Which runtime integration does this node report? |\n\nKubernetes removed built-in dockershim in 1.24. Docker Engine can still participate through an external CRI adapter such as cri-dockerd. A Docker runtime string is therefore not evidence that the cluster cannot work.\n\nCRI requests concern runtime operations; OCI specifications describe image/runtime formats at another layer. A compatible image still needs the right CPU architecture, operating system, permissions, and supported runtime behavior. If a container fails before startup, distinguish image retrieval from sandbox/runtime failure before asking for host-level crictl evidence."
+  },
+  {
+    "n": 61,
+    "summary": [
+      "Multiple clusters create separate control planes and operational boundaries.",
+      "Cluster-local Services do not automatically discover or reach another cluster.",
+      "Data replication and traffic failover need their own systems and ownership.",
+      "A useful design tests shared dependencies as well as regional outages."
+    ],
+    "cue": "A second shop needs stock, access, and directions.",
+    "plain": "Opening another branch gives the business another building, but it does not copy the inventory or tell customers where to go during an outage.",
+    "story": "Maya designs a second catalog branch and checks whether identity, registry, DNS, and database services would still depend on the first location.",
+    "detail": "| Decision | Example to resolve |\n| --- | --- |\n| Boundary | Separate regions for recovery, or teams for operational isolation? |\n| Desired state | Which repository and controller deploy each cluster? |\n| Traffic | Who changes global DNS/routing, and how is health checked? |\n| Data | Single writer, replicated readers, or a conflict-aware multi-writer design? |\n| Recovery | What data-loss and downtime targets must the failover meet? |\n\nGitOps can distribute manifests but does not replicate application databases. A service mesh or multi-cluster Service implementation also needs explicit trust, discovery, routing, and network configuration. Common registry or identity outages can affect every cluster at once.\n\nKeep an inventory of context, namespace, region, data owner, and recovery owner. Use explicit contexts during inspection. A namespace split on one cluster is useful organization, but it is not a second control plane or independent failure domain."
+  },
+  {
+    "n": 62,
+    "summary": [
+      "Hardening reduces unnecessary privileges and exposed interfaces.",
+      "A benchmark must match the cluster distribution and version being checked.",
+      "kube-bench inspects supported configuration checks, with manual or inaccessible items remaining.",
+      "Configuration checks, runtime detection, and application security provide different evidence."
+    ],
+    "cue": "Match the benchmark, inspect the evidence, verify the repair.",
+    "plain": "A building inspector can check locks and fire doors, but the report does not prove that every employee or sale is trustworthy.",
+    "story": "Maya reviews the catalog's security settings and writes a finding with a specific owner and verification step. A privileged host scanner is not needed to inspect this workload.",
+    "detail": "| Control | Catalog evidence | Remaining question |\n| --- | --- | --- |\n| Process identity | runAsNonRoot and UID 1000 | What identity actually runs? |\n| Kernel privilege | No escalation, dropped capabilities, seccomp | Did admission or runtime change effective settings? |\n| API access | Token automount disabled | Does any other credential grant access? |\n| Image trust | Explicit but mutable tag | Is its content verified and maintained? |\n| Network access | No base NetworkPolicy | Which callers should be allowed? |\n\nA kube-bench report must identify benchmark version, target platform, test permissions, and manual/skipped findings. An inaccessible managed control-plane check is not a pass. Prioritize findings by exposure and operational impact, then test application behavior after remediation.\n\nRuntime detection observes suspicious behavior; vulnerability scanning inspects known weaknesses; RBAC, admission, and transport controls constrain other paths. None replaces all the others. Treat the result as a scoped security review rather than a blanket certification."
+  },
+  {
+    "n": 63,
+    "summary": [
+      "Mesh mTLS can authenticate and encrypt traffic between correctly enrolled workloads.",
+      "Authorization determines which authenticated peers may call a service.",
+      "Traffic policies affect routes, timeouts, and retries within the supported data path.",
+      "Metrics and traces need enough coverage and context to support a decision."
+    ],
+    "cue": "Identify the caller, authorize the call, observe the result.",
+    "plain": "A courier checks each branch's badge, locks packages in transit, and records delivery times. The badge does not automatically grant permission to every stockroom.",
+    "story": "Maya traces one orders-to-catalog call and specifies the evidence required for peer identity, encryption, authorization, routing, and application success.",
+    "detail": "Enrollment and enforcement depend on the chosen mesh. Istio sidecar and ambient modes place components differently; Linkerd uses its own proxy and policy architecture. An authored Deployment without a sidecar is not sufficient to establish that live traffic is unmeshed: inspect effective platform enrollment and the actual connection path.\n\n| Claim | Required evidence |\n| --- | --- |\n| Encrypted/authenticated | Negotiated protection and expected peer identity |\n| Authorized | Effective policy plus a permitted and a denied caller |\n| Canary exposure | Effective routing weights and a meaningful request sample |\n| Healthy release | Application error/latency signals and sufficient traffic |\n\nWeighted traffic shares are statistical across requests, not a guarantee for every short sample. Retries can amplify load or duplicate writes, so coordinate them with idempotency and timeouts. Proxies do not automatically reveal internal application spans; trace propagation and instrumentation still matter. A successful HTTP response alone proves neither authorization coverage nor mTLS."
+  },
+  {
+    "n": 64,
+    "summary": [
+      "Cluster upgrades involve control-plane, node, client, and add-on compatibility.",
+      "Version-skew rules differ by component pair and supported release.",
+      "Rehearse the provider's sequence with backups, spare capacity, and workload checks.",
+      "Application rollback does not supply a control-plane downgrade procedure."
+    ],
+    "cue": "Inventory, rehearse, upgrade in stages, verify.",
+    "plain": "Maya upgrades the shop's power panel and counters in a planned sequence. Parts being close in age does not prove they can be connected safely.",
+    "story": "The Bookshop upgrade plan records exact source/target versions, add-on support, available replacement capacity, and the checks that decide whether to continue.",
+    "detail": "| Stage | Decision before moving on |\n| --- | --- |\n| Inventory | Are APIs, operators, webhooks, CNI/CSI, and runtimes supported at the target? |\n| Recovery | Can the required state and keys actually be restored? |\n| Rehearsal | Does the application still serve and preserve data in staging? |\n| Control-plane change | Does the distribution support this sequence and skew? |\n| Node change | Can evicted workloads run elsewhere with adequate capacity? |\n| Completion | Are controllers, networking, storage, and user requests healthy? |\n\nThere is no single plus-or-minus-one rule for all Kubernetes components. Kubelets must not be newer than the API server, and kubectl has a different compatibility window. The distribution may impose narrower rules than upstream. Pin the source and target before choosing commands.\n\nPDBs constrain eviction requests; they cannot prevent hardware failure or guarantee that a replacement can schedule. A supported upgrade path, workload recovery, and infrastructure restore are distinct plans. Stop at failed service/data checks rather than treating version strings as completion."
+  },
+  {
+    "n": 65,
+    "summary": [
+      "A recovery plan maps each state store to a tested restore method.",
+      "An etcd snapshot captures API state, not every application volume or external service.",
+      "Git rebuilds committed configuration while volume/database recovery needs additional tooling.",
+      "A restore drill must verify data, application behavior, and recovery targets."
+    ],
+    "cue": "The backup is a file; recovery is a working service.",
+    "plain": "Maya stores the shop plan, stock ledger, and safe keys separately. Recovering the plan lets staff rebuild counters, but does not recover missing stock records.",
+    "story": "The lab rebuilds only the static catalog in a separate namespace using Kustomize. The HTTP check verifies this narrow configuration recovery and leaves database/volume recovery explicitly untested.",
+    "detail": "| Asset | Candidate recovery source | Verification |\n| --- | --- | --- |\n| Authored configuration | Version-controlled manifests | Correct resources and response |\n| API state | Platform-supported datastore snapshot | API/controller consistency |\n| Database/volume data | Consistent backup or supported snapshot | Data integrity and application checks |\n| Keys and credentials | Protected recovery process | Authorized access after restore |\n| External services | Provider/application recovery plan | End-to-end request success |\n\nRecovery point objective limits acceptable data loss; recovery time objective limits downtime. Consistency, retention, dependencies, and access determine whether the plan can meet them. Velero coverage depends on configured object/volume backup methods and plugins; installation alone does not back up everything.\n\nUse version-appropriate etcd snapshot/restore tools. Kubernetes consumers of watches may require revision bump and compaction handling after datastore restore. Never rehearse a restore into the live control plane as a namespaced application exercise."
+  },
+  {
+    "n": 66,
+    "summary": [
+      "Requests describe schedulable capacity while usage describes consumed resources.",
+      "Cost allocation assigns measured infrastructure costs to workloads and shared services.",
+      "Right-sizing needs historical demand plus latency, throttling, and failure evidence.",
+      "Savings require a billing or infrastructure change, not just smaller YAML values."
+    ],
+    "cue": "Measure demand, resize safely, verify capacity and cost.",
+    "plain": "Maya can shrink a desk without reducing rent if the same room stays leased. The saving appears only when space or billing actually changes.",
+    "story": "The catalog's two replicas request a combined 50m CPU and 64Mi memory. Maya compares this baseline with historical demand and states what would need to change to release billable capacity.",
+    "detail": "Use representative busy periods, startup demand, and tail latency rather than one idle snapshot. Memory limits need total-container evidence and CPU limits can affect throttling. Changing a request also changes scheduling feasibility and CPU-utilization HPA calculations.\n\n| Observation | Next question |\n| --- | --- |\n| Requests well above usage | Are peaks, startup, and failover headroom covered? |\n| Low node utilization | Can workloads be consolidated and capacity actually removed? |\n| Idle PVC/load balancer | Is it retained for recovery or an inactive business path? |\n| Cheaper interruptible capacity | Can the service tolerate the provider's interruptions? |\n\nInclude storage, egress, load balancers, logging, and shared infrastructure in allocation. PDBs do not prevent provider capacity reclamation. Use current regional billing evidence for savings and compare service health after a proposed change. Without billing access, report resource quantities and evidence gaps rather than invented currency savings."
+  }
+]

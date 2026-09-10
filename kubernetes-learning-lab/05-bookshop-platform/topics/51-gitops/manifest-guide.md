@@ -1,4 +1,4 @@
-# GitOps with Argo CD and Flux: reading the manifests
+# 51. GitOps with Argo CD and Flux: reading the manifests
 
 Read the [chapter manifests](../../manifest-guide.md) and the earlier [Kustomize example](../../../04-bookshop-operations/topics/35-kustomize-and-helm/manifest-guide.md). No Application or Flux resource is installed here.
 

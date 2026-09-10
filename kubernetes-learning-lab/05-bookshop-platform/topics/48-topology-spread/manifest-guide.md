@@ -1,4 +1,4 @@
-# Topology spread constraints: reading the manifests
+# 48. Topology spread constraints: reading the manifests
 
 File: [topology display Deployment](manifests/10-spread.yaml).
 

@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: q109-report
+  namespace: k8s-learning-governance
+spec:
+  schedule: '*/5 * * * *'
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 30
+      ttlSecondsAfterFinished: 45
+      template:
+        metadata:
+          labels:
+            exercise: q109
+        spec:
+          automountServiceAccountToken: false
+          nodeSelector:
+            kubernetes.io/os: linux
+          terminationGracePeriodSeconds: 15
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: worker
+              image: busybox:1.36
+              command:
+                - /bin/sh
+                - -c
+              args:
+                - echo 'Bookshop report complete'
+              ports:
+                - name: http
+                  containerPort: 8080
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Never

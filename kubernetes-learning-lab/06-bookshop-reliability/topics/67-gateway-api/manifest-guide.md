@@ -1,4 +1,4 @@
-# Gateway API and Ingress: reading the manifests
+# 67. Gateway API and Ingress: reading the manifests
 
 File: [HTTPRoute](optional/10-route.yaml). `gateway.networking.k8s.io/v1` requires a served Gateway API. `parentRefs` names `bookshop-gateway` in the reliability namespace. The existing Gateway must allow this attachment and have a compatible HTTP listener.
 

@@ -1,4 +1,4 @@
-# Native sidecar containers: reading the manifests
+# 73. Native sidecar containers: reading the manifests
 
 File: [native sidecar Job](manifests/10-sidecar-job.yaml).
 

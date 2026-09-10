@@ -1,4 +1,4 @@
-# Kubernetes at scale: reading the manifests
+# 68. Kubernetes at scale: reading the manifests
 
 Read the [Deployment](../../manifests/20-deployment.yaml) and generated EndpointSlices from [question 55](../../../05-bookshop-platform/topics/55-endpointslices/manifest-guide.md). Each desired replica adds Pod/controller/status activity, not just CPU usage. Rolling updates and failing workloads add churn.
 

@@ -1,4 +1,4 @@
-# Cluster upgrade planning: reading the manifests
+# 64. Cluster upgrade planning: reading the manifests
 
 The [base Deployment](../../manifests/20-deployment.yaml) uses apps/v1; its readiness and rollingUpdate settings describe application behaviour, not cluster upgrade order. The [Service](../../manifests/30-service.yaml) and ConfigMap use core v1 APIs.
 

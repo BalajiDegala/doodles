@@ -1,0 +1,11 @@
+[
+  {
+    "op": "test",
+    "path": "/metadata/finalizers/0",
+    "value": "learning.bookshop/hold-q101"
+  },
+  {
+    "op": "remove",
+    "path": "/metadata/finalizers/0"
+  }
+]

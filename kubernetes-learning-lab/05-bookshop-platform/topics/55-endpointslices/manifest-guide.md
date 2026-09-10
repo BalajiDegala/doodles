@@ -1,4 +1,4 @@
-# EndpointSlices and Endpoints: reading the manifests
+# 55. EndpointSlices and Endpoints: reading the manifests
 
 Read the [Service](../../manifests/30-service.yaml); no manually authored EndpointSlice is needed.
 

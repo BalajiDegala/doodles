@@ -1,0 +1,117 @@
+[
+  {
+    "n": 96,
+    "slug": "disk-pressure",
+    "title": "Pod evicted due to disk pressure",
+    "pages": "46",
+    "mode": "Read-only investigation and manifest preview",
+    "summary": [
+      "DiskPressure can reflect low filesystem bytes or inodes on the node.",
+      "Container logs, writable layers, images, and disk-backed emptyDir consume different storage pools.",
+      "Pod eviction can destroy emptyDir data; a PVC has a separate lifecycle.",
+      "Use measured storage budgets and supported node cleanup instead of deleting kubelet directories."
+    ],
+    "cue": "Find the full filesystem, then protect its data.",
+    "plain": "The branch's loading area is full. Throwing away every box could discard customer orders; first distinguish rubbish, stock, and reusable crates.",
+    "story": "Maya inspects storage declarations and a bounded scratch-worker manifest. The exercise does not fill the node or trigger real eviction.",
+    "detail": "Read the evicted Pod's status.reason/message, node DiskPressure condition, and events. Check both available bytes and inode exhaustion. Kubelet accounting depends on filesystem layout, runtime, and support for nodefs/imagefs/containerfs; one path or tool is not portable across all clusters.\n\nEphemeral-storage requests support scheduling and limits can trigger eviction, but they are not durable storage or guaranteed disk reservation. emptyDir sizeLimit alone does not reserve capacity. Memory-backed emptyDir is accounted as memory. Use approved image garbage collection and log rotation; manually removing runtime/kubelet directories risks active workloads.",
+    "guide": "[Scratch-worker preview](manifests/10-scratch-worker.yaml) requests 20Mi ephemeral storage, limits it to 40Mi, and bounds disk-backed emptyDir at 16Mi. It writes only a small training note. The numbers illustrate accounting; they are not capacity recommendations.",
+    "prereq": "Pod/node reads and optional provider disk telemetry. The manifest is server-dry-run only in this runbook. Actual host disk inspection belongs to the node owner.",
+    "run": "~~~powershell\nK get pods -o wide\nC get nodes\n$node = 'PASTE_NODE_NAME'\nC describe node $node\nK apply --dry-run=server -f topics/%TOPIC%/manifests/\n~~~\n\nFor an existing evicted Pod, set the observed name:\n\n~~~powershell\n$p = 'PASTE_EVICTED_POD'\nK get pod $p -o json\nK describe pod $p\n~~~\n\nIdentify which filesystem is constrained, whether bytes or inodes are exhausted, which workloads contribute, and whether their data is durable. Record log rotation and image-GC ownership.",
+    "verify": "A real recovery needs sustained free space/inodes, cleared pressure, schedulable replacement Pods, and application/data checks. A new Running Pod does not recover lost emptyDir contents.",
+    "cleanup": "No Pod is created by dry-run. If you separately applied the small preview, remove only §q96-scratch§. Restore a revised storage limit through workload configuration; do not restore deleted runtime files.",
+    "sources": "[Node-pressure eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/), [Local ephemeral storage](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#local-ephemeral-storage)"
+  },
+  {
+    "n": 97,
+    "slug": "ingress-502",
+    "title": "Ingress returns 502 after deployment",
+    "pages": "46-47",
+    "mode": "Backend fault and repair",
+    "summary": [
+      "A gateway error must be traced through the controller, Service, and backend.",
+      "Ingress backend service.port differs from the Service targetPort.",
+      "Ready Pods can still be unreachable if the target port is wrong.",
+      "Verify through the real entry point after repairing the failing layer."
+    ],
+    "cue": "Listener to Service port to Pod port.",
+    "plain": "The receptionist sends customers to a valid room number but the wrong door inside it. The shop exists and staff are healthy; the directions are still wrong.",
+    "story": "A second Service points at the catalog's unused port 8081. Repairing targetPort to 8080 demonstrates one cause behind upstream failures without installing an ingress controller.",
+    "detail": "Compare host/path, IngressClass, controller routing status, backend Service name/port, EndpointSlice port, Pod readiness, and listener. Controller logs distinguish refused connections, timeouts, TLS mismatch, and reset connections. 502 versus 503 behavior varies by controller and failure type; no-ready-endpoint incidents do not always return 502.\n\nIf failures happen only during a rollout, correlate timestamps with termination/readiness and use question 90. An ingress controller can be healthy while the backend is not. A backend port-forward cannot validate host routing, ingress TLS, or policy on the actual path.",
+    "guide": "[Fault Service](faults/10-service.yaml) selects healthy §governance-catalog§ Pods but sets targetPort=8081. [Repair](fixed/10-service.yaml) sets 8080. No Ingress resource is installed. In an actual ingress manifest, §backend.service.port.number§ would be the Service port 80, not container port 8080.",
+    "prereq": "Healthy base, Service writes, and exec permission. Full ingress verification additionally requires an existing approved controller, ingress, and reachable address.",
+    "run": "~~~powershell\nK apply -f topics/%TOPIC%/faults/\nK get service q97-route -o yaml\nK get endpointslices -l kubernetes.io/service-name=q97-route -o yaml\nK exec deployment/%APP% -- wget -T 3 -qO- http://q97-route\n~~~\n\nExpect failure despite ready addresses. Repair:\n\n~~~powershell\nK apply -f topics/%TOPIC%/fixed/\nK exec deployment/%APP% -- wget -T 3 -qO- http://q97-route\n~~~\n\nFor a supplied ingress, inspect its backend and controller logs with its actual namespace/name. Test its configured host through the actual listener, recording HTTP status and response body.",
+    "verify": "The bounded drill should fail on 8081 and return catalog HTML on 8080. This proves a Service backend repair, not a deployed ingress or a specific HTTP 502 reproduction. A real incident must also pass the external host/path/TLS test.",
+    "cleanup": "~~~powershell\nK delete service q97-route --ignore-not-found\n~~~\n\nRestore any real ingress change through its managed manifest and recheck the same request.",
+    "sources": "[Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/), [Debug Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/)"
+  },
+  {
+    "n": 98,
+    "slug": "cross-namespace-policy",
+    "title": "Cross-namespace traffic blocked by NetworkPolicy",
+    "pages": "47",
+    "mode": "Policy fault and repair",
+    "summary": [
+      "Ingress isolation begins when a policy selects the receiving Pod.",
+      "A podSelector peer alone refers to Pods in the policy's own namespace.",
+      "namespaceSelector and podSelector in one peer combine as AND.",
+      "Both source egress and destination ingress must allow a permitted connection."
+    ],
+    "cue": "Which namespace AND which caller?",
+    "plain": "The stockroom accepts a staff badge only from a particular branch. Matching the badge shape alone should not admit every branch.",
+    "story": "Two visitors in a separate namespace first reach a disposable server. A deny rule blocks both; a repaired rule allows only the approved reader from that namespace.",
+    "detail": "NetworkPolicies are additive: another allow policy can make a supposedly denied flow succeed. Two separate peer entries combine as OR, unlike namespaceSelector and podSelector inside one entry. Labels are mutable API metadata, so RBAC and identity controls still matter.\n\nTest from the real source Pod to the Service, including DNS resolution and destination port. This drill isolates receiver ingress only, leaving DNS and visitor egress unchanged. A non-enforcing CNI may accept the API object without restricting packets. Existing connections can behave differently from new ones.",
+    "guide": "[Server](manifests/10-server.yaml) and [Service](manifests/20-service.yaml) use §q98-server§. [Client namespace](manifests/00-client-namespace.yaml) is §k8s-learning-cross-source§. The [two visitors](manifests/30-clients.yaml) differ by role label. [Deny](faults/10-policy.yaml) selects only that server. [Allow](fixed/10-policy.yaml) requires the source namespace's standard name label and §role: reader§ in one peer, TCP 8080.",
+    "prereq": "An enforcing CNI, permission for a fresh secondary namespace and NetworkPolicies, and capacity for three small Pods. Inspect any preexisting policies and secondary-namespace ownership before applying.",
+    "run": "~~~powershell\nC get namespace k8s-learning-cross-source\nC apply -f topics/%TOPIC%/manifests/\nK rollout status deployment/q98-server --timeout=120s\nC -n k8s-learning-cross-source wait --for=condition=Ready pod/q98-reader pod/q98-other --timeout=120s\n$target = \"http://q98-route.$ns.svc:80\"\nC -n k8s-learning-cross-source exec q98-reader -- wget -T 3 -qO- $target\nC -n k8s-learning-cross-source exec q98-other -- wget -T 3 -qO- $target\nK apply -f topics/%TOPIC%/faults/\nC -n k8s-learning-cross-source exec q98-reader -- wget -T 3 -qO- $target\nK apply -f topics/%TOPIC%/fixed/\nC -n k8s-learning-cross-source exec q98-reader -- wget -T 3 -qO- $target\nC -n k8s-learning-cross-source exec q98-other -- wget -T 3 -qO- $target\n~~~\n\nAllow policy propagation between stages. Initial namespace NotFound is expected. After deny, the reader must fail. After allow, reader succeeds and other fails.",
+    "verify": "Use a new request for each sample. If both callers pass after deny, inspect CNI enforcement and other additive policies. If neither passes after repair, compare namespace and role labels, port, source egress, and ready endpoints. Port-forward is not a policy test.",
+    "cleanup": "Restore before removing the resources:\n\n~~~powershell\nK delete networkpolicy q98-ingress --ignore-not-found\nC -n k8s-learning-cross-source exec q98-other -- wget -T 3 -qO- $target\nK delete deployment q98-server --ignore-not-found\nK delete service q98-route --ignore-not-found\nC get namespace k8s-learning-cross-source --show-labels\nC delete namespace k8s-learning-cross-source --timeout=120s\n~~~\n\nDelete the secondary namespace only if it still contains this exercise's visitors.",
+    "sources": "[NetworkPolicy selectors and isolation](https://kubernetes.io/docs/concepts/services-networking/network-policies/)"
+  },
+  {
+    "n": 99,
+    "slug": "statefulset-terminating",
+    "title": "StatefulSet Pod stuck in Terminating",
+    "pages": "48",
+    "mode": "Read-only investigation",
+    "summary": [
+      "DeletionTimestamp means termination has been requested, not that the process is gone.",
+      "Check grace time, kubelet reachability, finalizers, and storage attachment separately.",
+      "Force deletion removes the API object without proving the old writer stopped.",
+      "Fence the old instance before creating a potentially conflicting replacement."
+    ],
+    "cue": "API object gone does not mean writer gone.",
+    "plain": "A branch is removed from the directory while its cashier may still be working. Starting a second cashier on the same ledger can corrupt the accounts.",
+    "story": "Maya inspects a supplied stateful Pod and its claim/attachment chain. The catalog base is stateless; no production-like force deletion is needed to learn this incident.",
+    "detail": "Record deletionTimestamp, terminationGracePeriodSeconds, finalizers, node health, owner UID, and volume events. Graceful shutdown, container runtime failure, kubelet/API disconnection, and controller cleanup require different owners. A finalizer need not be present for a Pod to remain Terminating.\n\nStatefulSet identity and storage make duplicate execution consequential. Force deletion can permit a replacement before the original process is known stopped. ReadWriteOnce limits node access semantics; it is not a general distributed-writer fencing guarantee. Restore the responsible controller or fence/confirm shutdown using the provider's procedure before releasing identity or attachments.",
+    "guide": "Follow Pod ownerReferences to the StatefulSet, volume claimName to the PVC, PVC volumeName to the PV, and any CSI VolumeAttachment to the node. Inspect finalizers on the object where they actually occur; PVC/PV protection is not automatically a Pod finalizer. No blind finalizer patch is provided.",
+    "prereq": "An existing permitted stateful test workload, or use the earlier storage lesson's setup. Cluster-scoped PV/VolumeAttachment reads may require an operator.",
+    "run": "~~~powershell\n$p = 'PASTE_STATEFUL_POD'\nK get pod $p -o yaml\nK describe pod $p\nK get statefulsets,pvc\n~~~\n\nAfter locating the node and PVC in that Pod:\n\n~~~powershell\n$node = 'PASTE_NODE_NAME'\n$claim = 'PASTE_CLAIM_NAME'\nC describe node $node\nK get pvc $claim -o yaml\nC get volumeattachments\n~~~\n\nClassify: application shutdown still within grace, unreachable node, runtime failure, storage detach, or controller finalizer. Record who can prove the old writer is stopped.",
+    "verify": "A safe resolution establishes single-writer identity, appropriate attachment state, a ready replacement, and application data consistency. A disappeared API object is insufficient. If no stateful target exists, the exercise is a decision worksheet only.",
+    "cleanup": "Read-only commands require no cleanup. Do not remove storage protection or use grace-period=0 as a generic recovery. Follow the storage lesson's cleanup only for its disposable data.",
+    "sources": "[Force-delete StatefulSet Pods](https://kubernetes.io/docs/tasks/run-application/force-delete-stateful-set-pod/), [Persistent volume access modes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes)"
+  },
+  {
+    "n": 100,
+    "slug": "cost-spike",
+    "title": "Cluster costs doubled overnight",
+    "pages": "48-49",
+    "mode": "Read-only cost investigation",
+    "summary": [
+      "Separate price changes from increased resource quantity or runtime.",
+      "Attribute new capacity and shared costs to owners and recent changes.",
+      "Requests, current usage, and actual billed capacity are different measurements.",
+      "Remove only verified idle resources and measure service impact as well as savings."
+    ],
+    "cue": "What increased, who owns it, and can it be released?",
+    "plain": "The shop's bill can rise because it rented more rooms, kept them open longer, or paid a higher rate. Counting desks alone cannot explain the invoice.",
+    "story": "Maya inventories the catalog and namespace, then maps the results to a dated provider bill. The lab makes no currency savings claim from CPU samples.",
+    "detail": "Compare billing period/region/SKU, node counts and types, provisioned volumes, load balancers, egress, logs, and observability retention. A runaway CronJob or overlarge request may increase capacity, but changed rates or data transfer can explain costs even with stable Pods.\n\nUse workload labels and cost-allocation tooling when available. Current idle CPU does not establish historical overprovisioning. Reducing requests saves money only when the billing model or infrastructure allocation changes. Before removing an apparently unused PV or load balancer, verify recovery ownership, traffic, and retention requirements.",
+    "guide": "Read the base requests: two replicas total 50m CPU and 64Mi memory, excluding rollout surge and shared overhead. These quantities are not prices. Service type ClusterIP adds no authored cloud load balancer, but the surrounding cluster may have billable infrastructure.",
+    "prereq": "Read access to namespace resources; billing/cost-system access is optional and must use actual dated provider evidence. No billing setting or cloud resource is changed.",
+    "run": "~~~powershell\nC get nodes -o wide\nK get deploy,sts,job,cronjob,pvc,svc --show-labels\nK get pods --field-selector=status.phase=Pending\nK top pods --containers\nK get deployment %APP% -o yaml\n~~~\n\nCompare with the previous known-good inventory or bill. Build rows for node hours, storage, load balancers, egress, and logs; record changed quantity, unit rate, owner, and candidate action. Missing metrics or billing access should remain an explicit evidence gap.",
+    "verify": "A real cost repair is verified on normalized billing data and workload latency/error/capacity after the change. A lower resource request or a smaller Pod count alone does not prove reduced cost.",
+    "cleanup": "All commands are read-only. Any later deletion requires resource-owner and data-retention checks; a cost incident does not authorize deleting retained data.",
+    "sources": "[OpenCost allocation model](https://opencost.io/docs/specification/), [Resource management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)"
+  }
+]

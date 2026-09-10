@@ -1,4 +1,4 @@
-# Image pulls and registry authentication: runbook
+# 53. Image pulls and registry authentication: runbook
 
 Run from the chapter directory, as shown in [shared setup](../../runbook.md).
 

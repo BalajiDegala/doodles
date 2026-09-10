@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: q104-budget
+  namespace: k8s-learning-governance
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: q104-workers

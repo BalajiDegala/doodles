@@ -1,0 +1,117 @@
+[
+  {
+    "n": 81,
+    "slug": "pod-pending",
+    "title": "Pod stuck in Pending",
+    "pages": "38",
+    "mode": "Fault and repair",
+    "summary": [
+      "Pending includes both waiting for scheduling and waiting for container setup.",
+      "PodScheduled and nodeName distinguish placement failures from node-side startup failures.",
+      "The scheduler considers requests and constraints, not just current CPU usage.",
+      "Repair the incompatible constraint and verify a replacement Pod becomes Ready."
+    ],
+    "cue": "Assigned a node? If not, read the scheduling reason.",
+    "plain": "A new worker may be waiting for a desk or for tools at an assigned desk. The same waiting-room sign hides two different problems.",
+    "story": "Maya requests a worker for a branch label that no node has. The exercise changes only its template; it does not relabel or fill nodes.",
+    "detail": "| Evidence | Investigation |\n| --- | --- |\n| No nodeName, PodScheduled=False | FailedScheduling events: requests, taints, required affinity, topology, scheduling gates |\n| Node assigned, containers waiting | Image, init-container, volume, sandbox, or runtime errors; continue with questions 83-84 |\n| Unbound PVC | Check binding mode and storage events; WaitForFirstConsumer can legitimately wait for scheduling |\n\nLow §kubectl top§ usage is not proof of available requested capacity. A quota rejection may prevent a Pod from being created: inspect the owning controller's events. Node autoscaling cannot satisfy an arbitrary impossible label. There is no evidence for the PDF's fixed percentage claim about the most common cause.",
+    "guide": "[Fault Deployment](faults/10-worker.yaml) sets §nodeSelector.learning.bookshop/branch: absent-q81§. The [fixed Deployment](fixed/10-worker.yaml) removes that additional selector while retaining Linux placement, resources, and a working probe. Both files address §q81-worker§; applying the repair starts a new ReplicaSet.",
+    "prereq": "Healthy base and permission for Deployments, Pod inspection, and events. Confirm the deliberately absent branch label matches no node.",
+    "run": "## Locate the blocker\n\n~~~powershell\nC get nodes -l learning.bookshop/branch=absent-q81\nK apply -f topics/%TOPIC%/faults/\nK get pods -l app=q81-worker -o wide\nK describe pods -l app=q81-worker\n~~~\n\nThe first command must find no nodes. Wait for a FailedScheduling event before diagnosing the just-created Pod.\n\n## Repair the template\n\n~~~powershell\nK apply -f topics/%TOPIC%/fixed/\nK rollout status deployment/q81-worker --timeout=120s\nK exec deployment/q81-worker -- wget -T 3 -qO- http://localhost:8080\n~~~",
+    "verify": "Before repair, nodeName is empty and events identify the selector mismatch. After repair, the Deployment is available and serves HTML. If it remains Pending, read the new event rather than assuming the original blocker remains.",
+    "cleanup": "To repeat, reapply the fault only to this worker. Finish with:\n\n~~~powershell\nK delete deployment q81-worker --ignore-not-found\n~~~",
+    "sources": "[Debug Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/), [Pod lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)"
+  },
+  {
+    "n": 82,
+    "slug": "crashloopbackoff",
+    "title": "Pod stuck in CrashLoopBackOff",
+    "pages": "38-39",
+    "mode": "Fault and repair",
+    "summary": [
+      "CrashLoopBackOff is a container waiting reason during repeated restart backoff.",
+      "Read previous-container logs and lastState before deleting the evidence.",
+      "Exit codes, probes, and events must agree before assigning a cause.",
+      "Repair the command or dependency and verify restart counts stop increasing."
+    ],
+    "cue": "Previous logs explain the last attempt.",
+    "plain": "A worker clocks in, encounters the same broken instruction, and leaves. Asking them to return more often will not fix the instruction.",
+    "story": "A disposable worker prints a harmless configuration error and exits with code 1. The repaired template runs the usual catalog server.",
+    "detail": "Read logs for the specific container, including init containers when needed. A clean exit under §restartPolicy: Always§ can also cause repeated restarts. Inspect startup/liveness probe failures, missing commands, configuration references, and dependencies.\n\nExit 137 conventionally means SIGKILL: OOM or forced termination are possible causes. Shell exits 126/127 can suggest execution permission or command lookup failures; verify the runtime error and logs. Backoff timing varies with feature settings and version. Deleting Pods loses useful history without repairing the template.",
+    "guide": "The [fault](faults/10-worker.yaml) replaces the web command with §echo 'training: catalog configuration missing'; exit 1§. The Deployment uses Always restart behavior. The [repair](fixed/10-worker.yaml) restores the server command and probe.",
+    "prereq": "Healthy base; permission to create the disposable Deployment and read status/logs.",
+    "run": "## Capture the last attempt\n\n~~~powershell\nK apply -f topics/%TOPIC%/faults/\nK get pods -l app=q82-worker -w\n~~~\n\nStop with Ctrl+C after restarts appear, then select the failing Pod:\n\n~~~powershell\n$p = (K get pods -l app=q82-worker -o json | ConvertFrom-Json).items[0].metadata.name\nK describe pod $p\nK logs $p -c web --previous --tail=30\n~~~\n\nPrevious logs require a restart. If unavailable, read the current log and wait for one completed attempt.\n\n## Restore the worker\n\n~~~powershell\nK apply -f topics/%TOPIC%/fixed/\nK rollout status deployment/q82-worker --timeout=120s\nK get pods -l app=q82-worker\nK exec deployment/q82-worker -- wget -T 3 -qO- http://localhost:8080\n~~~",
+    "verify": "The fault emits the training message and exit 1. After repair, the replacement serves HTML and its restart count stays stable across repeated observations.",
+    "cleanup": "Save relevant logs first, then:\n\n~~~powershell\nK delete deployment q82-worker --ignore-not-found\n~~~",
+    "sources": "[Debug running Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/), [Container states](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-states)"
+  },
+  {
+    "n": 83,
+    "slug": "image-pull-backoff",
+    "title": "Pod stuck in ImagePullBackOff",
+    "pages": "39-40",
+    "mode": "Fault and repair",
+    "summary": [
+      "ImagePullBackOff delays another failed image pull.",
+      "Events distinguish a missing tag, denied credentials, rate limits, and connectivity failures.",
+      "Pull credentials must work for the scheduled node and correct registry.",
+      "Repair image identity or pull access, then verify imageID and readiness."
+    ],
+    "cue": "Read the registry error before changing credentials.",
+    "plain": "The courier cannot collect a package: perhaps the edition is wrong, the warehouse is locked, or the road is blocked. Each needs a different fix.",
+    "story": "The exercise requests a deliberately missing BusyBox tag in a separate Deployment, then restores the working tag. It creates no real registry credentials.",
+    "detail": "Node-side DNS, proxies, TLS trust, and registry access affect pulls. A working application Pod's DNS does not prove node-side image retrieval works. Inspect §imagePullSecrets§ names and Secret type without displaying credential data; the Secret must be in the Pod's namespace.\n\nTags can move: semantic version tags are not inherently immutable. A digest identifies content but does not authenticate its publisher. Always can reuse cached layers after resolution. IfNotPresent is a caching choice, not a universal production rule.",
+    "guide": "[Fault](faults/10-worker.yaml) uses §busybox:bookshop-q83-does-not-exist§ with Always. [Repair](fixed/10-worker.yaml) restores §busybox:1.36§ with IfNotPresent. If the failure is a timeout instead of a missing tag, the observation demonstrates a different pull problem.",
+    "prereq": "Nodes need public registry access. The fault produces a small number of failed pull attempts; stop after collecting evidence. If admission blocks the image, record that result instead.",
+    "run": "~~~powershell\nK apply -f topics/%TOPIC%/faults/\nK get pods -l app=q83-worker -w\n~~~\n\nStop after ErrImagePull or ImagePullBackOff appears:\n\n~~~powershell\nK describe pods -l app=q83-worker\nK apply -f topics/%TOPIC%/fixed/\nK rollout status deployment/q83-worker --timeout=180s\nK get pods -l app=q83-worker -o json\n~~~",
+    "verify": "Read waiting.message and events for the exact registry failure. After repair, check Ready and containerStatuses.imageID. ImagePullBackOff is a container reason, not a Pod phase.",
+    "cleanup": "~~~powershell\nK delete deployment q83-worker --ignore-not-found\n~~~\n\nNo registry Secret or registry-side object was created.",
+    "sources": "[Images and pull policies](https://kubernetes.io/docs/concepts/containers/images/), [Private registry pulls](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)"
+  },
+  {
+    "n": 84,
+    "slug": "container-creating",
+    "title": "Pod stuck in ContainerCreating",
+    "pages": "40",
+    "mode": "Fault and repair",
+    "summary": [
+      "ContainerCreating describes preparation of a container, usually after node assignment.",
+      "Inspect volumes, init containers, sandbox networking, and runtime events.",
+      "A scheduled Pod can still have the Pending phase during startup.",
+      "Restore the missing dependency and verify the same Pod becomes Ready."
+    ],
+    "cue": "The desk is assigned; which startup tool is missing?",
+    "plain": "The worker has a desk but cannot begin because the catalog file has not arrived. Hiring another worker produces the same wait.",
+    "story": "A disposable Pod mounts a required ConfigMap that is absent. Supplying it lets kubelet finish startup without replacing the Pod.",
+    "detail": "FailedMount suggests volume or configuration setup; FailedCreatePodSandBox suggests runtime/CNI setup. An init-container failure can also block the application. Capture the node name and exact reason before escalating to storage or networking.\n\nA missing namespaced ConfigMap does not require changing the cluster CNI or CSI. Displayed waiting reasons vary across failure paths. The PDF's claim that Pending always means unscheduled is incorrect; inspect conditions and nodeName.",
+    "guide": "[Waiting Pod](faults/10-worker.yaml) mounts required map §q84-settings§ at §/settings§. [Dependency](fixed/10-settings.yaml) supplies §catalog: ready§. §optional: false§ blocks startup while the map is missing. The mount is read-only and uses no external storage.",
+    "prereq": "Permission for Pod, ConfigMap, and event operations. q84-settings must be absent initially.",
+    "run": "~~~powershell\nK get configmap q84-settings\nK apply -f topics/%TOPIC%/faults/\nK get pod q84-worker -o wide\nK describe pod q84-worker\n~~~\n\nExpect NotFound first, then a node assignment and FailedMount after kubelet retries. Record the Pod UID and supply the map:\n\n~~~powershell\n$before = (K get pod q84-worker -o json | ConvertFrom-Json).metadata.uid\nK apply -f topics/%TOPIC%/fixed/\nK wait --for=condition=Ready pod/q84-worker --timeout=120s\n$after = (K get pod q84-worker -o json | ConvertFrom-Json).metadata.uid\n$before -eq $after\nK exec q84-worker -- cat /settings/catalog\n~~~",
+    "verify": "Expect the same UID, Ready=True, and ready from the file. If a node is never assigned, diagnose scheduling first. If mounting still fails, inspect the latest event and ConfigMap namespace/name.",
+    "cleanup": "~~~powershell\nK delete pod q84-worker --ignore-not-found\nK delete configmap q84-settings --ignore-not-found\n~~~",
+    "sources": "[Debug Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/), [ConfigMap consumption](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/)"
+  },
+  {
+    "n": 85,
+    "slug": "node-notready",
+    "title": "Node NotReady: diagnose without losing workloads",
+    "pages": "40-41",
+    "mode": "Read-only investigation",
+    "summary": [
+      "Ready=False and Ready=Unknown describe different health information.",
+      "Node conditions, Lease heartbeats, and kubelet/runtime evidence narrow the cause.",
+      "Cordon prevents ordinary new placement but does not evacuate Pods.",
+      "Drain or replacement requires spare capacity and a data-safety decision."
+    ],
+    "cue": "Heartbeat, pressure, reachability, then replacement.",
+    "plain": "A branch stops answering head office. It might have lost power, lost the phone line, or become overcrowded. Closing it without locating its stock can make the problem worse.",
+    "story": "Maya inventories one actual node and its workers, then writes a recovery decision. No kubelet is stopped and no desktop node is drained.",
+    "detail": "Inspect Ready, MemoryPressure, DiskPressure, and PIDPressure separately. Unknown can mean missed heartbeat information; it is not proof that the machine stopped executing. Check not-ready/unreachable taints and workload tolerations. Eviction timing depends on those controls and platform behavior.\n\nFor a real outage compare runtime health, disk/inode availability, certificates/clock, API reachability, and provider health. A PDB cannot restore a failed node or save emptyDir data. Fence an unreachable stateful writer before allowing a conflicting replacement.",
+    "guide": "Node status and the kube-node-lease Lease provide health evidence. The base Deployment shows desired replicas and actual placement; two replicas on one node do not provide node redundancy. No Node mutation or host-service change is authored.",
+    "prereq": "Node/Pod read access and optional Lease read permission. Node-side checks require the platform owner and distribution-specific access.",
+    "run": "## Inspect an observed node\n\n~~~powershell\nC get nodes\n$node = 'PASTE_NODE_NAME'\nC describe node $node\nC -n kube-node-lease get lease $node -o yaml\nC get pods -A --field-selector \"spec.nodeName=$node\" -o wide\nK get pods -l app=%APP% -o wide\n~~~\n\nReplace the node name before inspection. Record condition timestamps, Lease renewTime, taints, affected workers, and alternative capacity.\n\n## Decide the recovery path\n\nFor a lost heartbeat, determine whether the node still runs workloads. For pressure, identify the consuming filesystem/process. For certificate/runtime failure, follow the node owner's repair procedure. State whether drain can preserve availability and which local data would be lost.",
+    "verify": "On a healthy cluster this records a baseline, not an outage reproduction. A real repair needs fresh heartbeats, Ready=True, resolved pressure, working catalog traffic, and a reviewed decision to restore schedulability.",
+    "cleanup": "All commands are read-only. In an actual maintenance window, the operator who cordoned/drained the node owns uncordon and recovery verification.",
+    "sources": "[Nodes and heartbeats](https://kubernetes.io/docs/concepts/architecture/nodes/), [Safe drain](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/)"
+  }
+]

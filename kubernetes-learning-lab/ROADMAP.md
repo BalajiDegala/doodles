@@ -41,7 +41,7 @@ Only include files that the topic needs. A concept-only topic may not need manif
 
 ## Delivery stages
 
-Current checkpoint: first-draft content is complete through source topic 40, with the separate blue-green and canary extensions. The [operations chapter](04-bookshop-operations/README.md) completes the interrupted second batch. Local validation is recorded in [VALIDATION.md](VALIDATION.md); live exercises still need a running practice cluster. Topics 41-110 remain future work.
+Current checkpoint: commit 6dd6a67 supplied the existing lessons through question 80, despite its stale roadmap text. Questions 40-80 have now been reviewed and questions 81-110 rewritten in the PDF order. The previous commit remains intact. See [quality review](QUALITY-REVIEW-40-110.md) and [validation evidence](VALIDATION.md).
 
 ### Stage 1 - MVP
 

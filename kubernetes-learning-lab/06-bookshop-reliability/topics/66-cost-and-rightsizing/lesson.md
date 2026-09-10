@@ -1,4 +1,4 @@
-# Cost allocation and right-sizing
+# 66. Cost allocation and right-sizing
 
 ## Concise technical summary
 

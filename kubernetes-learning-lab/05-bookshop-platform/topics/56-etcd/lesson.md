@@ -1,4 +1,4 @@
-# etcd and cluster state
+# 56. etcd and cluster state
 
 ## Concise technical summary
 

@@ -1,4 +1,4 @@
-# Priority and preemption: reading the manifests
+# 49. Priority and preemption: reading the manifests
 
 Read the [base Deployment](../../manifests/20-deployment.yaml). Its Pod template omits `priorityClassName`. Admission may supply the current global default; otherwise a normal default priority applies. Inspect the live Pod’s `spec.priority` and `spec.preemptionPolicy` instead of assuming the cluster’s policy.
 

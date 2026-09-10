@@ -1,4 +1,4 @@
-# Centralized logging
+# 42. Centralized logging
 
 ## Concise technical summary
 

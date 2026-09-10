@@ -1,0 +1,12 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: q98-ingress
+  namespace: k8s-learning-governance
+spec:
+  podSelector:
+    matchLabels:
+      app: q98-server
+  policyTypes:
+    - Ingress
+  ingress: []

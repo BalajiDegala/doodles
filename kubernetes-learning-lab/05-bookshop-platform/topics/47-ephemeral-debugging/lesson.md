@@ -1,4 +1,4 @@
-# Ephemeral containers and kubectl debug
+# 47. Ephemeral containers and kubectl debug
 
 ## Concise technical summary
 

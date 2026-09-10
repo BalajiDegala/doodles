@@ -1,4 +1,4 @@
-# API request flow and admission: reading the manifests
+# 57. API request flow and admission: reading the manifests
 
 File: [admission preview Pod](manifests/10-admission-preview.yaml). It uses the same harmless worker/security settings as other exercises.
 

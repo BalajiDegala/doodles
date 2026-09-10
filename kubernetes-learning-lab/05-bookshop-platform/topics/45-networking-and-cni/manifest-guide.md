@@ -1,4 +1,4 @@
-# Networking and CNI plugins: reading the manifests
+# 45. Networking and CNI plugins: reading the manifests
 
 Read the [Deployment](../../manifests/20-deployment.yaml) and [Service](../../manifests/30-service.yaml).
 
