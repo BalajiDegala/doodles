@@ -8,8 +8,6 @@ ReplicaSets
 Service
 
 
-
-
 What is Kubernetes
 Kubernetes is an open-source container orchestration platform used to deploy, manage, scale, and maintain containerized applications. It automates tasks such as scheduling Pods, service discovery, scaling, rolling updates, and self-healing.
 
